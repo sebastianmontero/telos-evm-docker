@@ -39,9 +39,7 @@ You will need `docker` & `python3`.
     source ./activate.sh
     tevmc init local
     cd local
-    tevmc build
     tevmc up
-    tevmc stream daemon
 
 ## Important data
 

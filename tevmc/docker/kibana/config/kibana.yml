@@ -1,3 +1,0 @@
-server:
-  host: $kibana_host
-  port: $kibana_port

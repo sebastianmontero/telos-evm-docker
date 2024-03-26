@@ -1,0 +1,31 @@
+agent-name = $agent_name
+
+wasm-runtime = $wasm_runtime
+eos-vm-oc-compile-threads = $vm_oc_compile_threads
+eos-vm-oc-enable = $vm_oc_enable
+read-only-read-window-time-us = 2000000
+
+chain-state-db-size-mb = $chain_state_size
+enable-account-queries = $account_queries
+
+http-server-address = $http_addr
+access-control-allow-origin = $allow_origin
+contracts-console = $contracts_console
+http-validate-host = $http_validate_host
+p2p-listen-endpoint = $p2p_addr
+p2p-server-address = $p2p_addr
+verbose-http-errors = $http_verbose_error
+abi-serializer-max-time-ms = $abi_serializer_max_time
+http-max-response-time-ms = $http_max_response_time
+
+state-history-endpoint = $history_endpoint
+trace-history = $trace_history
+chain-state-history = $chain_history
+trace-history-debug-mode = $history_debug_mode
+state-history-dir = $history_dir
+
+sync-fetch-span = $sync_fetch_span
+max-clients = $max_clients
+
+disable-subjective-billing = $disable_subjective_billing
+max-transaction-time = $max_transaction_time

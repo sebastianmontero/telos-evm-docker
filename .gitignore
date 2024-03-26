@@ -21,3 +21,6 @@ yarn-error.log*
 .python-version
 **/__pycache__
 *.egg-info
+
+**/nodes
+**/.cache
