@@ -60,7 +60,7 @@ nodeos = {
         'abi_serializer_max_time': 2000000,
         'account_queries': True,
 
-        'http_addr': '0.0.0.0:8889',
+        'http_addr': '0.0.0.0:8888',
         'allow_origin': '*',
         'http_verbose_error': True,
         'contracts_console': True,
@@ -91,7 +91,7 @@ nodeos = {
 
         'disable_subjective_billing': True,
         'max_transaction_time': 500,
-
+        'resource_monitor_space_threshold': 98,
         'plugins': [
             'eosio::http_plugin',
             'eosio::chain_plugin',
