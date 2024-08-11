@@ -287,7 +287,7 @@ def test_all(tevmc_local2):
     tevmc.cleos.logger.info(json.dumps(rows, indent=4))
 
     tevmc.cleos.logger.info("Bridge z to evm...")
-    tevmc.cleos.push_action(
+    result = tevmc.cleos.push_action(
         bridge_z_account,
         "bridgeztoevm",
         [
@@ -298,8 +298,7 @@ def test_all(tevmc_local2):
         user1_z,
         tevmc.cleos.private_keys[user1_z],
     )
-
-    # assert mock_token_contract.functions.balanceOf(user1_e.address).call() == 99999999900
+    tevmc.cleos.logger.info(json.dumps(result, indent=4))
 
     tevmc.cleos.logger.info('Getting stats table...')
     rows = tevmc.cleos.get_table(bridge_z_account, 'MTK', 'stat')
@@ -313,6 +312,7 @@ def test_all(tevmc_local2):
     rows = tevmc.cleos.get_table(bridge_z_account, bridge_z_account, 'bridgereqs')
     tevmc.cleos.logger.info(json.dumps(rows, indent=4))
     
+    assert mock_token_contract.functions.balanceOf(user1_e.address).call() == 99999999900
 
     # breakpoint()
     # tevmc.cleos.logger.info('Getting config table...')
