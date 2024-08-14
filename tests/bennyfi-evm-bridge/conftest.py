@@ -13,6 +13,9 @@ import pytest
 from typing import Type
 
 from eth_account import Account
+from eth_typing import (
+    ChecksumAddress,
+)
 from eth_account.signers.local import (
     LocalAccount,
 )
@@ -22,6 +25,8 @@ from tevmc.config import local
 from tevmc.testing import bootstrap_test_stack
 from tevmc.testing import open_web3
 from tevmc import TEVMController
+from tevmc.cleos_evm import CLEOSEVM
+from web3 import Web3
 from web3.contract import (
     Contract
 )
@@ -45,16 +50,17 @@ def benybridge(request, tmp_path_factory):
 class BenyBridgeFixture:
 
     def __init__(self, tevmc: TEVMController):
-        self.tevmc = tevmc
-        self.cleos = tevmc.cleos
-        self.local_w3 = open_web3(tevmc)
+        self.tevmc: TEVMController = tevmc
+        self.cleos: CLEOSEVM = tevmc.cleos
+        self.local_w3: Web3 = open_web3(tevmc)
+        self.local_w3.from_wei
         self.evm_transaction_signer = EVMTransactionSigner(self.local_w3, default_gas_price=DEFAULT_GAS_PRICE, default_gas=DEFAULT_GAS)
         self.evm_transaction_signer.add_account(tevmc.cleos.evm_default_account)
         self.util_z = UtilZero(self.cleos)
         self.tokens = [
-            Token("mta", "MTA", "MTA", 8, 6, 100),
-            Token("mtb", "MTB", "WMTB", 7, 4, 100),
-            Token("mtc", "MTC", "MTC", 4, 3, 100)
+            Token(self.cleos, "mta", "MTA", "MTA", 8, 6, 50, 100),
+            Token(self.cleos, "mtb", "MTB", "WMTB", 7, 4, 4, 100),
+            Token(self.cleos, "mtc", "MTC", "MTC", 4, 3, 1, 100)
         ]
         tevmc.cleos.push_action('eosio.evm', 'setrevision', [2], 'eosio.evm')
         self.util_z.create_delegated_account('eosio', 'message.evm', 'eosio.evm')
@@ -64,6 +70,8 @@ class BenyBridgeFixture:
         self.e_accounts = self.__create_evm_accounts(5)
         self.__fund_evm_accounts_with_tlos(self.e_accounts)
         self.__fund_evm_accounts_with_tokens(self.tokens, self.e_accounts)
+        self.__register_tokens(self.tokens)
+        self.__register_yield_sources(self.tokens)
 
     def __deploy_contracts(self):
         tevmc = self.tevmc
@@ -99,18 +107,6 @@ class BenyBridgeFixture:
             ),
             "TokenRegistry",
         )
-        tevmc.cleos.logger.info("Registering MockToken...")
-        receipt = self.evm_transaction_signer.transact(
-            self.token_registry_contract,
-            "registerToken",
-            tevmc.cleos.evm_default_account.address,
-            self.mock_token_contract.address, 
-            "MTK",
-            6,
-            1,
-            True
-        )
-        assert receipt
 
         tevmc.cleos.logger.info("Deploying YieldSourceRegistry...")
         self.yield_source_registry_contract = tevmc.cleos.eth_deploy_contract_from_json(
@@ -119,6 +115,15 @@ class BenyBridgeFixture:
             ),
             "YieldSourceRegistry",
         )
+
+        tevmc.cleos.logger.info("Deploying MockYieldSourceAdaptor...")
+        self.mock_yield_source_adaptor = tevmc.cleos.eth_deploy_contract_from_json(
+            Path(
+                "../bennyfi-evm-bridge/evm/artifacts/contracts/mocks/MockYieldSourceAdaptor.sol/MockYieldSourceAdaptor.json"
+            ),
+            "MockYieldSourceAdaptor",
+        )
+
         tevmc.cleos.logger.info("Deploying Bridge E...")
         self.bridge_e_contract = tevmc.cleos.eth_deploy_contract_from_json(
             Path(
@@ -238,11 +243,45 @@ class BenyBridgeFixture:
         self.cleos.logger.info(f"Deploying Token contract: {name} {symbol} {decimals}")
         token_contract = self.cleos.eth_deploy_contract_from_json(
             Path(
-                "../bennyfi-evm-bridge/evm/artifacts/contracts/MockToken.sol/MockToken.json"
+                "../bennyfi-evm-bridge/evm/artifacts/contracts/mocks/MockToken.sol/MockToken.json"
             ),
             name,
             constructor_arguments=[name, symbol, decimals],
         )
-        assert self.token_contract.functions.symbol().call() == symbol
-        assert self.token_contract.functions.decimals().call() == decimals
+        assert token_contract.functions.symbol().call() == symbol
+        assert token_contract.functions.decimals().call() == decimals
         return token_contract
+
+    def __register_tokens(self, tokens: list[Token]):
+        for token in tokens:
+            self.__register_token(token.contract.address, token.z_symbol, token.z_decimals, token.min_amount)
+
+    def __register_token(self, token_contract_address: ChecksumAddress, z_symbol: str, z_decimals: int, min_amount: int):
+        self.cleos.logger.info(f"Registering Token: {token_contract_address} {z_symbol} {z_decimals} {min_amount}")
+        receipt = self.evm_transaction_signer.transact(
+            self.token_registry_contract,
+            "registerToken",
+            self.cleos.evm_default_account.address,
+            token_contract_address, 
+            z_symbol,
+            z_decimals,
+            min_amount,
+            True
+        )
+        assert receipt
+
+    def __register_yield_sources(self, tokens: list[Token]):
+        for token in tokens:
+            self.__register_yield_source(f'{token.name}ys', self.mock_yield_source_adaptor.address)
+
+    def __register_yield_source(self, name: str, adaptor_contract_address: ChecksumAddress):
+        self.cleos.logger.info(f"Registering yield source: {name} {adaptor_contract_address}")
+        receipt = self.evm_transaction_signer.transact(
+            self.yield_source_registry_contract,
+            "setYieldSource",
+            self.cleos.evm_default_account.address,
+            name,
+            adaptor_contract_address,
+            True
+        )
+        assert receipt
