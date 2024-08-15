@@ -69,6 +69,8 @@ class Token:
     def z_to_e_amount(self, z_amount: int) -> int:
         return self.to_decimals(z_amount, self.e_decimals - self.z_decimals)
     
+    def yield_source_name(self) -> str:
+        return f'{self.name}ys'
     def to_asset(self, amount: int) -> Asset:
         symbol = Symbol.from_str(f'{self.z_decimals},{self.z_symbol}')
         return Asset(amount, symbol)

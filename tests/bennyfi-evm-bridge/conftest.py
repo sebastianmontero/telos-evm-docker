@@ -272,7 +272,7 @@ class BenyBridgeFixture:
 
     def __register_yield_sources(self, tokens: list[Token]):
         for token in tokens:
-            self.__register_yield_source(f'{token.name}ys', self.mock_yield_source_adaptor.address)
+            self.__register_yield_source(token.yield_source_name(), self.mock_yield_source_adaptor.address)
 
     def __register_yield_source(self, name: str, adaptor_contract_address: ChecksumAddress):
         self.cleos.logger.info(f"Registering yield source: {name} {adaptor_contract_address}")
