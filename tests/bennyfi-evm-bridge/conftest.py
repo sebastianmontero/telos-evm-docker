@@ -142,8 +142,8 @@ class BenyBridgeFixture:
                 self.bridge_z_account,
                 self.token_registry_contract.address,
                 self.yield_source_registry_contract.address,
-                0,
-                10,
+                '0x0000000000000000000000000000000000000000',
+                0
             ],
         )
 
