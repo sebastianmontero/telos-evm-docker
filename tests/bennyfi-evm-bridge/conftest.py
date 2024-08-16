@@ -76,6 +76,13 @@ class BenyBridgeFixture:
     def __deploy_contracts(self):
         tevmc = self.tevmc
         local_w3 = self.local_w3
+        tevmc.cleos.logger.info("Deploying mock stake local contract...")
+        self.stake_local_account = "stakelocal"
+        tevmc.cleos.deploy_contract_from_path(
+            self.stake_local_account,
+            Path("../bennyfi-evm-bridge/zero/artifacts/mock.stake.origin/build/stakeorigin"),
+            contract_name="stakeorigin",
+        )
         tevmc.cleos.logger.info("Deploying bridge zero contract...")
         self.bridge_z_account = "benybridge"
         tevmc.cleos.deploy_contract_from_path(
@@ -140,8 +147,6 @@ class BenyBridgeFixture:
             ],
         )
 
-        self.stake_local_account = "stakelocal"
-        tevmc.cleos.create_account_staked("eosio", "stakelocal")
         tevmc.cleos.logger.info("Calling init action...")
         tevmc.cleos.push_action(
             self.bridge_z_account,

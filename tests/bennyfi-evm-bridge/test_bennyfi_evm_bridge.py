@@ -31,68 +31,90 @@ def test_all(benybridge):
     bbf = benybridge
     tevmc = bbf.tevmc
     tevmc.logger.setLevel(logging.DEBUG)
-    local_w3 = bbf.local_w3
-    evm_transaction_signer = bbf.evm_transaction_signer
+    
+    # token = bbf.tokens[0]
+    # tevmc.cleos.logger.info(
+    #     "TEST BRIDGE FROM EVM TO ZERO TOKEN WITH SAME NAME DIFFERENT PRECISION WITHOUT BRIDGE FEE"
+    # )
+    # assert_bridge_evm_to_zero(
+    #     bbf, bbf.e_accounts[0], bbf.z_accounts[0], token, 847348
+    # )
 
-    # tevmc.cleos.logger.info('Getting config table...')
-    # rows = tevmc.cleos.get_table(bbf.bridge_z_account, bbf.bridge_z_account, 'bridgeconfig')
-    # tevmc.cleos.logger.info(json.dumps(rows, indent=4))
-    # assert rows[0]['version'] == 'v1.0'
+    # tevmc.cleos.logger.info(
+    #     "TEST BRIDGE FROM ZERO TO EVM TOKEN WITH SAME NAME DIFFERENT PRECISION"
+    # )
+    # assert_bridge_zero_to_evm(
+    #     bbf, bbf.z_accounts[0], bbf.e_accounts[0], token, 5173
+    # )
+
+    # set_fee(bbf, 1000)
+    # tevmc.cleos.logger.info(
+    #     "TEST BRIDGE MORE TOKENS FROM EVM TO ZERO TOKEN WITH SAME NAME DIFFERENT PRECISION WITH BRIDGE FEE"
+    # )
+    # token = bbf.tokens[0]
+    # assert_bridge_evm_to_zero(
+    #     bbf, bbf.e_accounts[0], bbf.z_accounts[0], token, 1349347
+    # )
+
+    # tevmc.cleos.logger.info(
+    #     "BRDIGE TOKENS TO STAKE LOCAL ACCOUNT WITH SAME NAME DIFFERENT PRECISION"
+    # )
+    # assert_bridge_evm_to_zero(
+    #     bbf, bbf.e_accounts[0], bbf.stake_local_account, token, 9847348
+    # )
+    # pool_id = 2
+    # yield_source = token.yield_source_name()
+    # tevmc.cleos.logger.info(
+    #     "TEST STAKE TOKEN WITH SAME NAME DIFFERENT PRECISION"
+    # )
+    # assert_stake(bbf,pool_id, yield_source, token, 4847348, 24)
+
+    # tevmc.cleos.logger.info(
+    #     "TEST UNSTAKE TOKEN WITH SAME NAME DIFFERENT PRECISION"
+    # )
+    # assert_unstake(bbf,pool_id, yield_source, token, 3247348)
+
+    # tevmc.cleos.logger.info(
+    #     "TEST BRIDGE FROM EVM TO ZERO TOKEN WITH DIFFERENT NAME SAME PRECISION WITH FEE"
+    # )
+    # token = bbf.tokens[1]
+    # assert_bridge_evm_to_zero(
+    #     bbf, bbf.e_accounts[0], bbf.z_accounts[0], token, 142348
+    # )
+
+    token = bbf.tokens[1]
     tevmc.cleos.logger.info(
-        "TEST BRIDGE FROM EVM TO ZERO TOKEN WITH SAME NAME DIFFERENT PRECISION"
+        "TEST BRIDGE FROM EVM TO ZERO TOKEN WITH DIFFERENT NAME SAME PRECISION WITH FEE TO DIFFERENT ACCOUNTS"
     )
-    token = bbf.tokens[0]
     assert_bridge_evm_to_zero(
-        bbf, bbf.e_accounts[0], bbf.z_accounts[0], token, 847348
+        bbf, bbf.e_accounts[1], bbf.z_accounts[2], token, 517342
     )
 
     tevmc.cleos.logger.info(
-        "TEST BRIDGE FROM ZERO TO EVM TOKEN WITH SAME NAME DIFFERENT PRECISION"
+        "TEST BRIDGE FROM ZERO TO EVM TOKEN WITH DIFFERENT NAME SAME PRECISION"
     )
     assert_bridge_zero_to_evm(
-        bbf, bbf.z_accounts[0], bbf.e_accounts[0], token, 5173
+        bbf, bbf.z_accounts[2], bbf.e_accounts[0], token, 21738
     )
 
     tevmc.cleos.logger.info(
-        "BRDIGE TOKENS TO STAKE LOCAL ACCOUNT"
+        "BRDIGE TOKENS TO STAKE LOCAL ACCOUNT WITH DIFFERENT NAME SAME PRECISION"
     )
     assert_bridge_evm_to_zero(
-        bbf, bbf.e_accounts[0], bbf.stake_local_account, token, 9847348
+        bbf, bbf.e_accounts[0], bbf.stake_local_account, token, 28453
     )
-    pool_id = 2
+
+    pool_id = 5
     yield_source = token.yield_source_name()
     tevmc.cleos.logger.info(
-        "TEST STAKE TOKEN WITH SAME NAME DIFFERENT PRECISION"
+        "TEST STAKE TOKEN WITH DIFFERENT NAME SAME PRECISION"
     )
-    assert_stake(bbf,pool_id, yield_source, token, 4847348, 24)
+    assert_stake(bbf,pool_id, yield_source, token, 28453, 24)
 
-    # tevmc.cleos.logger.info("Bridge z to evm...")
-    # result = tevmc.cleos.push_action(
-    #     bbf.bridge_z_account,
-    #     "bridgeztoevm",
-    #     [
-    #         bbf.z_accounts[0],
-    #         "0.000090 MTA",
-    #         bbf.e_accounts[0].address[2:],
-    #     ],
-    #     bbf.z_accounts[0],
-    #     tevmc.cleos.private_keys[bbf.z_accounts[0]],
-    # )
-    # tevmc.cleos.logger.info(json.dumps(result, indent=4))
-
-    # tevmc.cleos.logger.info('Getting stats table...')
-    # rows = tevmc.cleos.get_table(bbf.bridge_z_account, 'MTK', 'stat')
-    # tevmc.cleos.logger.info(json.dumps(rows, indent=4))
-
-    # tevmc.cleos.logger.info('Getting accounts table...')
-    # rows = tevmc.cleos.get_table(bbf.bridge_z_account, bbf.z_accounts[0], 'accounts')
-    # tevmc.cleos.logger.info(json.dumps(rows, indent=4))
-
-    # tevmc.cleos.logger.info('Getting bridge requests table...')
-    # rows = tevmc.cleos.get_table(bbf.bridge_z_account, bbf.bridge_z_account, 'bridgereqs')
-    # tevmc.cleos.logger.info(json.dumps(rows, indent=4))
-
-    # assert token.contract.functions.balanceOf(bbf.e_accounts[0].address).call() == 9999999000
+    tevmc.cleos.logger.info(
+        "TEST UNSTAKE TOKEN WITH SAME NAME DIFFERENT PRECISION"
+    )
+    assert_unstake(bbf,pool_id, yield_source, token, 28453)
 
 
 def assert_bridge_evm_to_zero(
@@ -103,6 +125,7 @@ def assert_bridge_evm_to_zero(
     z_amount: int,
 ):
     tevmc = bbf.tevmc
+    local_w3 = bbf.local_w3
     evm_transaction_signer = bbf.evm_transaction_signer
 
     e_user_balance = token.e_balance(e_user.address)
@@ -110,6 +133,7 @@ def assert_bridge_evm_to_zero(
     e_bridge_balance = bbf.bridge_e_contract.functions.tokenBalances(
         token.contract.address
     ).call()
+    z_bridge_eth_balance = local_w3.eth.get_balance(bbf.bridge_z_eth_addr)
     z_supply = token.z_supply()
     e_amount = token.z_to_e_amount(z_amount)
     tevmc.cleos.logger.info(
@@ -124,12 +148,15 @@ def assert_bridge_evm_to_zero(
         e_amount,
     )
     assert receipt
-
+    fee = bbf.bridge_e_contract.functions.fee().call()
     tevmc.cleos.logger.info("Bridge evm to zero...")
     receipt = evm_transaction_signer.transact(
         bbf.bridge_e_contract,
         "bridgeEVMToZero",
-        e_user.address,
+        {
+            "from": e_user.address,
+            "value": fee,
+        },
         z_user,
         token.contract.address,
         e_amount,
@@ -140,6 +167,7 @@ def assert_bridge_evm_to_zero(
     e_bridge_balance += e_amount
     z_user_balance.amount += z_amount
     z_supply.amount += z_amount
+    z_bridge_eth_balance += fee
     assert token.e_balance(e_user.address) == e_user_balance
     assert token.e_balance(bbf.bridge_e_contract.address) == e_bridge_balance
     assert (
@@ -148,6 +176,7 @@ def assert_bridge_evm_to_zero(
     )
     assert token.z_balance(z_user) == z_user_balance
     assert token.z_supply() == z_supply
+    assert local_w3.eth.get_balance(bbf.bridge_z_eth_addr) == z_bridge_eth_balance
     assert_stats(bbf, token, z_supply)
 
 
@@ -247,6 +276,62 @@ def assert_stake(
     assert_stake_info(bbf, pool_id, yield_source, token, e_amount, staking_period_hrs)
 
 
+def assert_unstake(
+    bbf: BenyBridgeFixture,
+    pool_id: int,
+    yield_source: str,
+    token: Token,
+    z_amount: int,
+):
+    tevmc = bbf.tevmc
+    evm_transaction_signer = bbf.evm_transaction_signer
+
+    mock_yield_source_adaptor_balance = token.e_balance(bbf.mock_yield_source_adaptor.address)
+    stake_local_balance = token.z_balance(bbf.stake_local_account)
+    e_bridge_balance = bbf.bridge_e_contract.functions.tokenBalances(
+        token.contract.address
+    ).call()
+    z_supply = token.z_supply()
+    e_amount = token.z_to_e_amount(z_amount)
+    # tevmc.cleos.logger.info("Set allowance to bridge e...")
+    # receipt = evm_transaction_signer.transact(
+    #     token.contract,
+    #     "approve",
+    #     bbf.mock_yield_source_adaptor.address,
+    #     bbf.bridge_e_contract.address,
+    #     e_amount,
+    # )
+    # assert receipt
+
+    tevmc.cleos.logger.info("Trigger Unstake...")
+    receipt = evm_transaction_signer.transact(
+        bbf.mock_yield_source_adaptor,
+        "triggerUnstake",
+        bbf.e_accounts[0].address,
+        yield_source,
+        pool_id,
+        token.contract.address,
+        e_amount,
+        bbf.bridge_e_contract.address,
+    )
+    assert receipt
+
+    mock_yield_source_adaptor_balance -= e_amount
+    e_bridge_balance += e_amount
+    stake_local_balance.amount += z_amount
+    z_supply.amount += z_amount
+    assert token.e_balance(bbf.mock_yield_source_adaptor.address) == mock_yield_source_adaptor_balance
+    assert token.e_balance(bbf.bridge_e_contract.address) == e_bridge_balance
+    assert (
+        bbf.bridge_e_contract.functions.tokenBalances(token.contract.address).call()
+        == e_bridge_balance
+    )
+    assert token.z_balance(bbf.stake_local_account) == stake_local_balance
+    assert token.z_supply() == z_supply
+    assert_stats(bbf, token, z_supply)
+    assert_unstake_info(bbf, pool_id, token.to_asset(z_amount))
+
+
 def assert_stats(bbf: BenyBridgeFixture, token: Token, expected_supply: Asset):
     stats = token.z_stats()
     assert stats["supply"] == str(expected_supply)
@@ -307,3 +392,28 @@ def assert_stake_info(
     assert actual[2] == token.contract.address
     assert actual[3] == amount
     assert actual[4] == staking_period_hrs
+
+def assert_unstake_info(
+    bbf: BenyBridgeFixture,
+    pool_id: int,
+    amount: Asset
+):
+    results = bbf.cleos.get_table(
+        bbf.stake_local_account, bbf.stake_local_account, "unstakeinfo"
+    )
+    bbf.cleos.logger.info(f'In assert_unstake_info, results: {json.dumps(results, indent=4)}')
+    assert len(results) == 1
+    actual = results[0]
+    assert actual["from"] == bbf.bridge_z_account
+    assert actual["amount"] == str(amount)
+    assert actual["memo"] == f"pool id: {pool_id}"    
+
+
+def set_fee(bbf: BenyBridgeFixture, fee: int):
+    receipt = bbf.evm_transaction_signer.transact(
+            bbf.bridge_e_contract,
+            "setFee",
+            bbf.cleos.evm_default_account.address,
+            fee
+            )
+    assert receipt
