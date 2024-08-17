@@ -34,6 +34,7 @@ from web3.contract import (
 from util.util_zero import UtilZero
 from util.evm_transaction_signer import EVMTransactionSigner
 from util.token import Token
+from util.zero_bridge import ZeroBridge
 
 DEFAULT_GAS_PRICE = 524799638144
 DEFAULT_GAS = 991000
@@ -57,6 +58,7 @@ class BenyBridgeFixture:
         self.evm_transaction_signer = EVMTransactionSigner(self.local_w3, default_gas_price=DEFAULT_GAS_PRICE, default_gas=DEFAULT_GAS)
         self.evm_transaction_signer.add_account(tevmc.cleos.evm_default_account)
         self.util_z = UtilZero(self.cleos)
+        self.zero_bridge = ZeroBridge(self)
         self.tokens = [
             Token(self.cleos, "mta", "MTA", "MTA", 8, 6, 50, 100),
             Token(self.cleos, "mtb", "MTB", "WMTB", 7, 4, 4, 100),
@@ -66,6 +68,7 @@ class BenyBridgeFixture:
         self.util_z.create_delegated_account('eosio', 'message.evm', 'eosio.evm')
         assert self.local_w3.is_connected()
         self.__deploy_contracts()
+        self.__init_zero_contract()
         self.z_accounts = self.__create_zero_accounts(5)
         self.e_accounts = self.__create_evm_accounts(5)
         self.__fund_evm_accounts_with_tlos(self.e_accounts)
@@ -147,19 +150,10 @@ class BenyBridgeFixture:
             ],
         )
 
-        tevmc.cleos.logger.info("Calling init action...")
-        tevmc.cleos.push_action(
-            self.bridge_z_account,
-            "init",
-            [
-                self.bridge_e_contract.address[2:],
-                self.token_registry_contract.address[2:],
-                self.stake_local_account,
-                "v1.0",
-                self.bridge_z_account,
-            ],
-            self.bridge_z_account,
-        )
+
+    def __init_zero_contract(self):
+        self.cleos.logger.info("Calling init action...")
+        self.zero_bridge.init(self.bridge_e_contract.address, self.token_registry_contract.address, self.stake_local_account, "v1.0", self.bridge_z_account)
 
     def __create_zero_accounts(self, num_accounts: int) -> list[str]:
         accounts = []
