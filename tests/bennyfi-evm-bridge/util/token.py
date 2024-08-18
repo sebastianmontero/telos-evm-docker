@@ -13,8 +13,9 @@ class Token:
     def to_decimals(amount: int, decimals: int) -> int:
         return amount * 10 ** decimals
     
-    def __init__(self, cleos: CLEOSEVM, name: str, e_symbol: str, z_symbol: str, e_decimals: int, z_decimals: int, min_amount: int, initial_amount: int):
-        self.cleos = cleos
+    def __init__(self, bbf, name: str, e_symbol: str, z_symbol: str, e_decimals: int, z_decimals: int, min_amount: int, initial_amount: int):
+        self.bbf = bbf
+        self.cleos: CLEOSEVM = bbf.cleos
         self.name = name
         self.e_symbol = e_symbol
         self.z_symbol = z_symbol
@@ -74,3 +75,5 @@ class Token:
     def to_asset(self, amount: int) -> Asset:
         symbol = Symbol.from_str(f'{self.z_decimals},{self.z_symbol}')
         return Asset(amount, symbol)
+    
+        

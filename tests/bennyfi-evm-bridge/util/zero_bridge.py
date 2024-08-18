@@ -7,10 +7,11 @@ class ZeroBridge:
     self.cleos: CLEOSEVM = bbf.cleos
 
 
-  def init(self, bridge_e_address: str, token_registry_address: str, stake_local_account: str, version: str, admin: str) -> dict:
+  def init(self, bridge_e_address: str, token_registry_address: str, stake_local_account: str, version: str, admin: str, actor: str = None) -> dict:
+    actor = self.bbf.bridge_z_account if actor is None else actor
     return self.__action(
         "init",
-        self.bbf.bridge_z_account,
+        actor,
         [
             bridge_e_address[2:],
             token_registry_address[2:],
@@ -45,6 +46,28 @@ class ZeroBridge:
         ]
     )
   
+  def evmnotify(self, sender: str, msg: bytearray,  actor: str) -> dict:
+    return self.__action(
+        "evmnotify",
+        actor,
+        [
+          sender[2:],
+          msg
+        ]
+    )
+  
+  def get_last_bridge_request(self) -> dict | None:
+    results = self.__table("bridgereqs", limit=1, reverse=True)
+    return results[0] if len(results) == 1 else None
+  
+  def get_last_stake_request(self) -> dict | None:
+    results = self.__table("stakereqs", limit=1, reverse=True)
+    return results[0] if len(results) == 1 else None
+  
+  def get_config(self) -> dict | None:
+    results = self.__table("bridgeconfig")
+    return results[0] if len(results) == 1 else None
+  
   def __action(self, action: str, actor: str, data: list) -> dict:
     return self.cleos.push_action(
         self.bbf.bridge_z_account,
@@ -53,3 +76,8 @@ class ZeroBridge:
         actor,
         self.cleos.private_keys[actor]
     )
+  
+  def __table(self, table: str, **kwargs) -> list[dict]:
+    return self.cleos.get_table(
+          self.bbf.bridge_z_account, self.bbf.bridge_z_account, table, **kwargs
+      )

@@ -50,25 +50,25 @@ def benybridge(request, tmp_path_factory):
 
 class BenyBridgeFixture:
 
-    def __init__(self, tevmc: TEVMController):
+    def __init__(self, tevmc: TEVMController) -> None:
         self.tevmc: TEVMController = tevmc
         self.cleos: CLEOSEVM = tevmc.cleos
         self.local_w3: Web3 = open_web3(tevmc)
-        self.local_w3.from_wei
         self.evm_transaction_signer = EVMTransactionSigner(self.local_w3, default_gas_price=DEFAULT_GAS_PRICE, default_gas=DEFAULT_GAS)
         self.evm_transaction_signer.add_account(tevmc.cleos.evm_default_account)
         self.util_z = UtilZero(self.cleos)
         self.zero_bridge = ZeroBridge(self)
         self.tokens = [
-            Token(self.cleos, "mta", "MTA", "MTA", 8, 6, 50, 100),
-            Token(self.cleos, "mtb", "MTB", "WMTB", 7, 4, 4, 100),
-            Token(self.cleos, "mtc", "MTC", "MTC", 4, 3, 1, 100)
+            Token(self, "mta", "MTA", "MTA", 8, 6, 50, 100),
+            Token(self, "mtb", "MTB", "WMTB", 7, 4, 4, 100),
+            Token(self, "mtc", "MTC", "MTC", 4, 3, 1, 100)
         ]
         tevmc.cleos.push_action('eosio.evm', 'setrevision', [2], 'eosio.evm')
-        self.util_z.create_delegated_account('eosio', 'message.evm', 'eosio.evm')
+        priv, pub = self.cleos.create_key_pair()
+        self.cleos.import_key('message.evm', priv)
+        self.util_z.create_delegated_account('eosio', 'message.evm', 'eosio.evm', key=pub)
         assert self.local_w3.is_connected()
         self.__deploy_contracts()
-        self.__init_zero_contract()
         self.z_accounts = self.__create_zero_accounts(5)
         self.e_accounts = self.__create_evm_accounts(5)
         self.__fund_evm_accounts_with_tlos(self.e_accounts)
@@ -151,7 +151,7 @@ class BenyBridgeFixture:
         )
 
 
-    def __init_zero_contract(self):
+    def init_zero_contract(self):
         self.cleos.logger.info("Calling init action...")
         self.zero_bridge.init(self.bridge_e_contract.address, self.token_registry_contract.address, self.stake_local_account, "v1.0", self.bridge_z_account)
 

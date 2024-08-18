@@ -34,6 +34,7 @@ def test_all(benybridge):
     tevmc.logger.setLevel(logging.DEBUG)
     test_util = BridgeTestUtil(bbf)
     token = bbf.tokens[0]
+    bbf.init_zero_contract()
     # tevmc.cleos.logger.info(
     #     "TEST BRIDGE FROM EVM TO ZERO TOKEN WITH SAME NAME DIFFERENT PRECISION WITHOUT BRIDGE FEE"
     # )

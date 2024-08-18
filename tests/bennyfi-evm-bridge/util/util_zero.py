@@ -14,6 +14,7 @@ class UtilZero:
         net: str = f'10.0000 {DEFAULT_SYS_TOKEN_CODE}',
         cpu: str = f'10.0000 {DEFAULT_SYS_TOKEN_CODE}',
         ram: int = 10_000_000,
+        key: str | None = None
     ) -> tuple[int, dict]:
         '''Creates a new staked blockchain account.
 
@@ -36,14 +37,18 @@ class UtilZero:
         :return: Exit code and response dictionary.
         :rtype: tuple[int, dict]
         '''
+        
+        keys = []
+        if key:
+           keys.append({'key': key, 'weight': 1})
 
         actions = [{
             'account': 'eosio',
             'name': 'newaccount',
             'data': [
                 owner, name,
-                {'threshold': 1, 'keys': [], 'accounts': [{"permission":{"actor":delegated_to,"permission":delegated_permission},"weight":1}], 'waits': []},
-                {'threshold': 1, 'keys': [], 'accounts': [{"permission":{"actor":delegated_to,"permission":delegated_permission},"weight":1}], 'waits': []}
+                {'threshold': 1, 'keys': keys, 'accounts': [{"permission":{"actor":delegated_to,"permission":delegated_permission},"weight":1}], 'waits': []},
+                {'threshold': 1, 'keys': keys, 'accounts': [{"permission":{"actor":delegated_to,"permission":delegated_permission},"weight":1}], 'waits': []}
             ],
             'authorization': [{
                 'actor': owner,
