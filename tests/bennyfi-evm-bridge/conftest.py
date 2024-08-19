@@ -65,8 +65,9 @@ class BenyBridgeFixture:
         ]
         tevmc.cleos.push_action('eosio.evm', 'setrevision', [2], 'eosio.evm')
         priv, pub = self.cleos.create_key_pair()
-        self.cleos.import_key('message.evm', priv)
-        self.util_z.create_delegated_account('eosio', 'message.evm', 'eosio.evm', key=pub)
+        self.message_evm_account = 'message.evm'
+        self.cleos.import_key(self.message_evm_account, priv)
+        self.util_z.create_delegated_account('eosio', self.message_evm_account, 'eosio.evm', key=pub)
         assert self.local_w3.is_connected()
         self.__deploy_contracts()
         self.z_accounts = self.__create_zero_accounts(5)

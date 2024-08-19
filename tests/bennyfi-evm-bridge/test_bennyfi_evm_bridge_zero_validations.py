@@ -22,7 +22,9 @@ import web3
 from util.evm_transaction_signer import EVMTransactionSigner
 from util.token import Token
 from util.bridge_test_util import BridgeTestUtil
+from util.function_encoder import FunctionEncoder
 from conftest import BenyBridgeFixture
+
 
 DEFAULT_GAS_PRICE = 524799638144
 DEFAULT_GAS = 991000
@@ -64,7 +66,7 @@ def test_all(benybridge):
         "evmnotify: Should fail for not initialized contract"
     )
     with pytest.raises(Exception) as e:
-        zero_bridge.evmnotify(e_user.address, b'', 'message.evm')
+        zero_bridge.evmnotify(e_user.address, b'')
     assert "contract must be initialized first" in str(e)
 
     tevmc.cleos.logger.info(
@@ -163,7 +165,7 @@ def test_all(benybridge):
     assert "contract already initialized" in str(e)
 
     tevmc.cleos.logger.info(
-        "BRIDGEZTOEVM TEST"
+        "BRIDGEZTOEVM TESTS"
     )
     
     tevmc.cleos.logger.info(
@@ -242,7 +244,7 @@ def test_all(benybridge):
     assert "overdrawn balance" in str(e)
 
     tevmc.cleos.logger.info(
-        "STAKE TEST"
+        "STAKE TESTS"
     )
 
     tevmc.cleos.logger.info(
@@ -316,5 +318,51 @@ def test_all(benybridge):
     with pytest.raises(Exception) as e:
         zero_bridge.stake(pool_id, yield_source, token.to_asset(stake_local_account_balance + 1), staking_period_hrs)
     assert "overdrawn balance" in str(e)
+
+    tevmc.cleos.logger.info(
+        "EVMNOTIFY TESTS"
+    )
+
+    tevmc.cleos.logger.info(
+        "evmnotify: Should fail for called from non message account"
+    )
+    with pytest.raises(Exception) as e:
+        zero_bridge.evmnotify(e_user.address, b'', z_user)
+    assert "missing authority of" in str(e)
+
+    tevmc.cleos.logger.info(
+        "evmnotify: Should fail for sender not the evm bridge address"
+    )
+    with pytest.raises(Exception) as e:
+        zero_bridge.evmnotify(e_user.address, b'')
+    assert "Sender must be the evm bridge contract" in str(e)
+
+    tevmc.cleos.logger.info(
+        "evmnotify: Should fail for msg without handler function signature"
+    )
+    with pytest.raises(Exception) as e:
+        zero_bridge.evmnotify(bbf.bridge_e_contract.address, b'123')
+    assert "msg must have the handler function signature" in str(e)
+
+    tevmc.cleos.logger.info(
+        "evmnotify: Should fail for unknown handler function signature"
+    )
+    with pytest.raises(Exception) as e:
+        zero_bridge.evmnotify(bbf.bridge_e_contract.address, b'1234')
+    assert "unknown handler function signature" in str(e)
+
+    tevmc.cleos.logger.info(
+        "BRIDGE_ZERO_TO_EVM_SUCCEEDED TESTS"
+    )
+
+    encoder = FunctionEncoder("bridgeZeroToEVMSucceeded", ["uint64"])
+    tevmc.cleos.logger.info(
+        "bridge_zero_to_evm_succeeded: Should fail for invalid message length for the expected number of parameters"
+    )
+    with pytest.raises(Exception) as e:
+        zero_bridge.evmnotify(e_user.address, encoder.get_function_selector(), z_user)
+    assert "missing authority of" in str(e)
+
+    
     
 
