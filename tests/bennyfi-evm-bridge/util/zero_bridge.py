@@ -46,7 +46,7 @@ class ZeroBridge:
         ]
     )
   
-  def evmnotify(self, sender: str, msg: bytearray,  actor: str = None) -> dict:
+  def evmnotify(self, sender: str, msg: str,  actor: bytes = None) -> dict:
     actor = self.bbf.message_evm_account if actor is None else actor
     return self.__action(
         "evmnotify",
