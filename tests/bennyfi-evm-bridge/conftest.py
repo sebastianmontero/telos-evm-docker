@@ -63,6 +63,8 @@ class BenyBridgeFixture:
             Token(self, "mtb", "MTB", "WMTB", 7, 4, 4, 100),
             Token(self, "mtc", "MTC", "MTC", 4, 3, 1, 100)
         ]
+        self.bridge_z_admin = 'bridgezadmin'
+        self.cleos.create_account_staked("eosio", self.bridge_z_admin)
         tevmc.cleos.push_action('eosio.evm', 'setrevision', [2], 'eosio.evm')
         priv, pub = self.cleos.create_key_pair()
         self.message_evm_account = 'message.evm'
@@ -152,9 +154,9 @@ class BenyBridgeFixture:
         )
 
 
-    def init_zero_contract(self):
-        self.cleos.logger.info("Calling init action...")
-        self.zero_bridge.init(self.bridge_e_contract.address, self.token_registry_contract.address, self.stake_local_account, "v1.0", self.bridge_z_account)
+    def configure_zero_contract(self):
+        self.cleos.logger.info("Calling setconfig action...")
+        self.zero_bridge.set_config(self.bridge_e_contract.address, self.token_registry_contract.address, self.stake_local_account, 5, 40, "v1.0", self.bridge_z_admin)
 
     def __create_zero_accounts(self, num_accounts: int) -> list[str]:
         accounts = []

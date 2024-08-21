@@ -33,6 +33,7 @@ DEFAULT_GAS = 991000
 
 def test_all(benybridge):
     bbf = benybridge
+    local_w3 = bbf.local_w3
     tevmc = bbf.tevmc
     tevmc.logger.setLevel(logging.DEBUG)
     test_util = BridgeTestUtil(bbf)
@@ -55,117 +56,254 @@ def test_all(benybridge):
     )
     with pytest.raises(Exception) as e:
         zero_bridge.bridge_z_to_e(z_user, e_user.address, asset_amount)
-    assert "contract must be initialized first" in repr(e.value)
+    assert "contract must be configured first" in repr(e.value)
 
     tevmc.cleos.logger.info(
         "stake: Should fail for not initialized contract"
     )
     with pytest.raises(Exception) as e:
         zero_bridge.stake(pool_id, yield_source, asset_amount, staking_period_hrs)
-    assert "contract must be initialized first" in repr(e.value)
+    assert "contract must be configured first" in repr(e.value)
 
     tevmc.cleos.logger.info(
         "evmnotify: Should fail for not initialized contract"
     )
     with pytest.raises(Exception) as e:
         zero_bridge.evmnotify(e_user.address, b'')
-    assert "contract must be initialized first" in repr(e.value)
+    assert "contract must be configured first" in repr(e.value)
 
     tevmc.cleos.logger.info(
-        "INIT TESTS"
+        "SETCONFIG TESTS"
     )
-
+    refund_delay_period_mins = 5
+    batch_size = 40
+    admin = bbf.bridge_z_admin
     tevmc.cleos.logger.info(
-        "init: Should fail for calling from non contract account"
+        "setconfig: Should fail for calling from non contract account"
     )
     with pytest.raises(Exception) as e:
-        zero_bridge.init(
+        zero_bridge.set_config(
             bbf.bridge_e_contract.address,
             bbf.token_registry_contract.address,
             bbf.stake_local_account,
+            refund_delay_period_mins,
+            batch_size,
             version,
-            bbf.bridge_z_account,
+            admin,
+            True,
             z_user)
-    assert "missing authority of" in repr(e.value)
+    assert "missing required authority of contract or admin" in repr(e.value)
 
     tevmc.cleos.logger.info(
-        "init: Should fail for non existant stake local account"
+        "setconfig: Should fail for non existant stake local account"
     )
     with pytest.raises(Exception) as e:
-        zero_bridge.init(
+        zero_bridge.set_config(
             bbf.bridge_e_contract.address,
             bbf.token_registry_contract.address,
             'nonexistant',
+            refund_delay_period_mins,
+            batch_size,
             version,
-            bbf.bridge_z_account)
+            admin)
     assert "stake local contract account doesn't exist" in repr(e.value)
 
     tevmc.cleos.logger.info(
-        "init: Should fail for non existent admin account"
+        "setconfig: Should fail for non existent admin account"
     )
     with pytest.raises(Exception) as e:
-        zero_bridge.init(
+        zero_bridge.set_config(
             bbf.bridge_e_contract.address,
             bbf.token_registry_contract.address,
             bbf.stake_local_account,
+            refund_delay_period_mins,
+            batch_size,
             version,
             "nonexistent")
     assert "initial admin account doesn't exist" in repr(e.value)
 
     tevmc.cleos.logger.info(
-        "init: Should fail for non existent bridge account"
+        "setconfig: Should fail for refund delay period equal to 0"
     )
     with pytest.raises(Exception) as e:
-        zero_bridge.init(
+        zero_bridge.set_config(
+            bbf.bridge_e_contract.address,
+            bbf.token_registry_contract.address,
+            bbf.stake_local_account,
+            0,
+            batch_size,
+            version,
+            admin)
+    assert "refund delay period must be greater than 0" in repr(e.value)
+
+    tevmc.cleos.logger.info(
+        "setconfig: Should fail for batch size equal to 0"
+    )
+    with pytest.raises(Exception) as e:
+        zero_bridge.set_config(
+            bbf.bridge_e_contract.address,
+            bbf.token_registry_contract.address,
+            bbf.stake_local_account,
+            refund_delay_period_mins,
+            0,
+            version,
+            admin)
+    assert "batch size must be greater than 0" in repr(e.value)
+
+    tevmc.cleos.logger.info(
+        "setconfig: Should fail for non existent bridge account"
+    )
+    with pytest.raises(Exception) as e:
+        zero_bridge.set_config(
             "0x0000000000000000000000000000000000000000",
             bbf.token_registry_contract.address,
             bbf.stake_local_account,
+            refund_delay_period_mins,
+            batch_size,
             version,
-            bbf.bridge_z_account)
+            admin)
     assert "bridge account doesn't exist" in repr(e.value)
 
     tevmc.cleos.logger.info(
-        "init: Should fail for non existent token registry account"
+        "setconfig: Should fail for non existent token registry account"
     )
     with pytest.raises(Exception) as e:
-        zero_bridge.init(
+        zero_bridge.set_config(
             bbf.bridge_e_contract.address,
             "0x0000000000000000000000000000000000000000",
             bbf.stake_local_account,
+            refund_delay_period_mins,
+            batch_size,
             version,
-            bbf.bridge_z_account)
+            admin)
     assert "token registry account doesn't exist" in repr(e.value)
 
     tevmc.cleos.logger.info(
-        "init: Should work"
+        "setconfig: Should work"
     )
-    zero_bridge.init(
+    zero_bridge.set_config(
         bbf.bridge_e_contract.address,
         bbf.token_registry_contract.address,
         bbf.stake_local_account,
+        refund_delay_period_mins,
+        batch_size,
         version,
-        bbf.bridge_z_account)
+        admin)
     
     test_util.assert_zero_bridge_config(
         bbf.bridge_e_contract.address,
         bbf.token_registry_contract.address,
         bbf.stake_local_account,
+        refund_delay_period_mins,
+        batch_size,
         version,
-        bbf.bridge_z_account
+        admin,
+        True
     )
     
     tevmc.cleos.logger.info(
-        "init: Should fail for already initialized contract"
+        "setconfig: Should fail for calling from non contract or admin account"
     )
     with pytest.raises(Exception) as e:
-        zero_bridge.init(
+        zero_bridge.set_config(
             bbf.bridge_e_contract.address,
             bbf.token_registry_contract.address,
             bbf.stake_local_account,
-            "v1.1", # to avoid duplicate transaction issue
-            bbf.bridge_z_account)
-    assert "contract already initialized" in repr(e.value)
+            refund_delay_period_mins,
+            batch_size,
+            version,
+            admin,
+            True,
+            z_user)
+    assert "missing required authority of contract or admin" in repr(e.value)
 
+    tevmc.cleos.logger.info(
+        "setconfig: Should work when calling from admin account"
+    )
+    zero_bridge.set_config(
+        bbf.bridge_e_contract.address,
+        bbf.token_registry_contract.address,
+        bbf.z_accounts[2],
+        2,
+        20,
+        "v2.0",
+        z_user,
+        True,
+        admin)
+    
+    test_util.assert_zero_bridge_config(
+        bbf.bridge_e_contract.address,
+        bbf.token_registry_contract.address,
+        bbf.z_accounts[2],
+        2,
+        20,
+        "v2.0",
+        z_user,
+        True
+    )
+
+    tevmc.cleos.logger.info(
+        "setconfig: Should work when calling from contract account"
+    )
+    zero_bridge.set_config(
+        bbf.bridge_e_contract.address,
+        bbf.token_registry_contract.address,
+        bbf.stake_local_account,
+        refund_delay_period_mins,
+        batch_size,
+        version,
+        admin,
+        False)
+    
+    test_util.assert_zero_bridge_config(
+        bbf.bridge_e_contract.address,
+        bbf.token_registry_contract.address,
+        bbf.stake_local_account,
+        refund_delay_period_mins,
+        batch_size,
+        version,
+        admin,
+        False
+    )
+
+    tevmc.cleos.logger.info(
+        "CONTRACT NOT ACTIVE VALIDATIONS"
+    )
+    tevmc.cleos.logger.info(
+        "bridgeztoevm: Should fail for not active contract"
+    )
+    with pytest.raises(Exception) as e:
+        zero_bridge.bridge_z_to_e(z_user, e_user.address, asset_amount)
+    assert "contract has been paused" in repr(e.value)
+
+    tevmc.cleos.logger.info(
+        "stake: Should fail for not active contract"
+    )
+    with pytest.raises(Exception) as e:
+        zero_bridge.stake(pool_id, yield_source, asset_amount, staking_period_hrs)
+    assert "contract has been paused" in repr(e.value)
+
+    tevmc.cleos.logger.info(
+        "evmnotify: Should fail for not active contract"
+    )
+    with pytest.raises(Exception) as e:
+        zero_bridge.evmnotify(e_user.address, b'')
+    assert "contract has been paused" in repr(e.value)
+
+
+    tevmc.cleos.logger.info(
+        "Activate contract"
+    )
+    zero_bridge.set_config(
+        bbf.bridge_e_contract.address,
+        bbf.token_registry_contract.address,
+        bbf.stake_local_account,
+        refund_delay_period_mins,
+        batch_size,
+        "v1.1", # avoid duplicate transaction
+        admin,
+        True)
+    
     tevmc.cleos.logger.info(
         "BRIDGEZTOEVM TESTS"
     )
@@ -562,3 +700,218 @@ def test_all(benybridge):
         zero_bridge.evmnotify(bbf.bridge_e_contract.address, encoder.encode_function_call(pool_id, yield_source, symbol, 49))
     assert "amount must be greater or equal to min_amount" in repr(e.value)
 
+    # tevmc.cleos.logger.info(
+    #     "REFUND TESTS"
+    # )
+
+    # tevmc.cleos.logger.info(
+    #     "refund: Should fail for non existent bridge request"
+    # )
+    # with pytest.raises(Exception) as e:
+    #     zero_bridge.refund(50)
+    # assert "bridge request not found" in repr(e.value)
+    
+    # tevmc.cleos.logger.info(
+    #     "Getting last completed bridge request and lapsing it to verify that it is not refunded"
+    # )
+    # last_completed_bridge_request = zero_bridge.get_last_bridge_request()
+    # assert last_completed_bridge_request['state'] == "completed"
+    # zero_bridge.lapse_bridge_request(last_completed_bridge_request['bridge_request_id'])
+
+    # tevmc.cleos.logger.info(
+    #     "refund: Should fail for bridge request that has been completed"
+    # )
+    # with pytest.raises(Exception) as e:
+    #     zero_bridge.refund(last_completed_bridge_request['bridge_request_id'])
+    # assert "bridge request must be pending" in repr(e.value)
+    
+    # tevmc.cleos.logger.info(
+    #     "Set an invalid evm bridge contract address in order to be able to create requests that require refunds"
+    # )
+
+    # zero_bridge.set_config(
+    #     bbf.token_registry_contract.address,
+    #     bbf.token_registry_contract.address,
+    #     bbf.stake_local_account,
+    #     refund_delay_period_mins,
+    #     batch_size,
+    #     version,
+    #     admin)
+    
+    # tevmc.cleos.logger.info(
+    #     "Create refund request"
+    # )
+    # result = bbf.zero_bridge.bridge_z_to_e(z_user, e_user.address, token.to_asset(50))
+    # tevmc.cleos.logger.info(json.dumps(result, indent=4))
+
+    # refund_bridge_request = zero_bridge.get_last_bridge_request()
+    # assert refund_bridge_request['state'] == "completed"
+
+    # tevmc.cleos.logger.info(
+    #     "refund: Should fail for bridge request for which refund delay has not expired"
+    # )
+    # with pytest.raises(Exception) as e:
+    #     zero_bridge.refund(refund_bridge_request['bridge_request_id'])
+    # assert "refund delay period has not expired" in repr(e.value)
+
+    # zero_bridge.lapse_bridge_request(refund_bridge_request['bridge_request_id'])
+
+    # tevmc.cleos.logger.info(
+    #     "refund: Should work for bridge request for which refund delay has expired and in pending state"
+    # )
+    # balance = token.z_balance(z_user)
+    # zero_bridge.refund(refund_bridge_request['bridge_request_id'])
+    # balance.amount += 50
+    # assert token.z_balance(z_user) == balance
+
+    
+    # tevmc.cleos.logger.info(
+    #     "RESET TESTS"
+    # )
+    # tevmc.cleos.logger.info(
+    #     "Populate tables"
+    # )
+
+    # test_util.assert_bridge_zero_to_evm(
+    #     z_user, e_user, token, 50
+    # )
+    # test_util.assert_bridge_zero_to_evm(
+    #     z_user, e_user, token, 51
+    # )
+    # test_util.assert_bridge_zero_to_evm(
+    #     z_user, e_user, token, 52
+    # )
+
+    # test_util.assert_stake(
+    #     30, yield_source, token, 100, 50
+    # )
+    # test_util.assert_stake(
+    #     31, yield_source, token, 100, 50
+    # )
+
+    # bridge_request_count = zero_bridge.get_bridge_request_count()
+    # assert bridge_request_count  > 2
+    # stake_request_count = zero_bridge.get_stake_request_count()
+    # assert stake_request_count  > 2
+
+    # tevmc.cleos.logger.info(
+    #     "reset: Should fail when called from non contract account"
+    # )
+    # with pytest.raises(ChainAPIError) as e:
+    #     zero_bridge.reset(10, ["bridgeconfig"], 1, bbf.bridge_z_admin)
+    # assert  "missing authority of" in repr(e.value)
+
+    # zero_bridge.reset(10, ["bridgeconfig"], 2)
+    # assert zero_bridge.get_bridge_request_count() == bridge_request_count
+    # assert zero_bridge.get_stake_request_count() == stake_request_count
+
+    # zero_bridge.reset(1, ["bridgereqs"], 3)
+    # assert zero_bridge.get_config() is None
+
+    # bridge_request_count -= 1
+    # assert zero_bridge.get_bridge_request_count() == bridge_request_count
+    # assert zero_bridge.get_stake_request_count() == stake_request_count
+
+    # zero_bridge.reset(1, ["stakereqs"], 4)
+    # assert zero_bridge.get_config() is None
+
+    # stake_request_count -= 1
+    # assert zero_bridge.get_bridge_request_count() == bridge_request_count
+    # assert zero_bridge.get_stake_request_count() == stake_request_count
+
+    # request_count = bridge_request_count + stake_request_count
+    # call_counter = 5
+    # while request_count > 0:
+    #     zero_bridge.reset(2, ["bridgereqs", "stakereqs"], call_counter)
+    #     call_counter += 1
+    #     request_count = max(0, request_count - 2)
+    #     assert zero_bridge.get_bridge_request_count() + zero_bridge.get_stake_request_count() == request_count
+
+
+def test_refund(benybridge):
+    bbf = benybridge
+    local_w3 = bbf.local_w3
+    tevmc = bbf.tevmc
+    tevmc.logger.setLevel(logging.DEBUG)
+    test_util = BridgeTestUtil(bbf)
+    token = bbf.tokens[0]
+    zero_bridge = bbf.zero_bridge
+    bbf.configure_zero_contract()
+
+    z_user = bbf.z_accounts[0]
+    e_user = bbf.e_accounts[0]
+
+    test_util.assert_bridge_evm_to_zero(
+        e_user, z_user, token, 1000000
+    )
+
+    test_util.assert_bridge_zero_to_evm(
+        z_user, e_user, token, 100
+    )
+
+    tevmc.cleos.logger.info(
+        "REFUND TESTS"
+    )
+
+    tevmc.cleos.logger.info(
+        "refund: Should fail for non existent bridge request"
+    )
+    with pytest.raises(Exception) as e:
+        zero_bridge.refund(50)
+    assert "bridge request not found" in repr(e.value)
+    
+    tevmc.cleos.logger.info(
+        "Getting last completed bridge request and lapsing it to verify that it is not refunded"
+    )
+    last_completed_bridge_request = zero_bridge.get_last_bridge_request()
+    assert last_completed_bridge_request['state'] == "completed"
+    zero_bridge.lapse_bridge_request(last_completed_bridge_request['bridge_request_id'])
+
+    tevmc.cleos.logger.info(
+        "refund: Should fail for bridge request that has been completed"
+    )
+    with pytest.raises(Exception) as e:
+        zero_bridge.refund(last_completed_bridge_request['bridge_request_id'])
+    assert "bridge request must be pending" in repr(e.value)
+    
+    tevmc.cleos.logger.info(
+        "Set an invalid evm bridge contract address in order to be able to create requests that require refunds"
+    )
+    refund_delay_period_mins = 5
+    batch_size = 40
+    admin = bbf.bridge_z_admin
+    version = "v1.0"
+    zero_bridge.set_config(
+        bbf.token_registry_contract.address,
+        bbf.token_registry_contract.address,
+        bbf.stake_local_account,
+        refund_delay_period_mins,
+        batch_size,
+        version,
+        admin)
+    
+    tevmc.cleos.logger.info(
+        "Create refund request"
+    )
+    result = bbf.zero_bridge.bridge_z_to_e(z_user, e_user.address, token.to_asset(50))
+    tevmc.cleos.logger.info(json.dumps(result, indent=4))
+
+    refund_bridge_request = zero_bridge.get_last_bridge_request()
+    assert refund_bridge_request['state'] == "completed"
+
+    tevmc.cleos.logger.info(
+        "refund: Should fail for bridge request for which refund delay has not expired"
+    )
+    with pytest.raises(Exception) as e:
+        zero_bridge.refund(refund_bridge_request['bridge_request_id'])
+    assert "refund delay period has not expired" in repr(e.value)
+
+    zero_bridge.lapse_bridge_request(refund_bridge_request['bridge_request_id'])
+
+    tevmc.cleos.logger.info(
+        "refund: Should work for bridge request for which refund delay has expired and in pending state"
+    )
+    balance = token.z_balance(z_user)
+    zero_bridge.refund(refund_bridge_request['bridge_request_id'])
+    balance.amount += 50
+    assert token.z_balance(z_user) == balance

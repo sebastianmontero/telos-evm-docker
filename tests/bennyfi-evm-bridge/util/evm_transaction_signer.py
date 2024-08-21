@@ -29,8 +29,23 @@ class EVMTransactionSigner:
         # Build the transaction
         transaction = contract_function(*args, **kwargs).build_transaction(tx_params)
 
+        return self.__transact(transaction)
+    
+    def transfer(self, from_address: str, to_address: str, amount: Union[int, Wei], tx_parameters: Dict = None):
+        
+        tx_parameters = tx_parameters or {}
+        tx_parameters['from'] = from_address
+        tx_parameters['to'] = to_address
+        tx_parameters['value'] = amount
+        # Prepare the transaction parameters
+        tx_params = self._prepare_tx_params(tx_parameters)
+
+        return self.__transact(tx_params)
+    
+    def __transact(self, transaction: Dict):
+        
         # Get the account to sign with
-        account = self._get_account_for_transaction(tx_params['from'])
+        account = self._get_account_for_transaction(transaction['from'])
 
         # Sign the transaction
         signed_txn = account.sign_transaction(transaction)

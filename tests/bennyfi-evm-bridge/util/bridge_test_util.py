@@ -17,7 +17,7 @@ from tevmc.cleos_evm import CLEOSEVM
 
 from tevmc.utils import to_wei
 from web3.middleware.signing import construct_sign_and_send_raw_middleware
-import web3
+from web3 import Web3
 from util.evm_transaction_signer import EVMTransactionSigner
 from util.token import Token
 
@@ -36,7 +36,7 @@ class BridgeTestUtil:
     z_amount: int,
   ):
       tevmc = self.bbf.tevmc
-      local_w3 = self.bbf.local_w3
+      local_w3: Web3 = self.bbf.local_w3
       evm_transaction_signer = self.bbf.evm_transaction_signer
 
       e_user_balance = token.e_balance(e_user.address)
@@ -300,8 +300,11 @@ class BridgeTestUtil:
       bridge_e_address: str,
       token_registry_address: str,
       stake_local_account: str,
+      refund_delay_period_mins: int,
+      batch_size: int,
       version: str,
-      admin: str
+      admin: str,
+      active: bool
   ):
       actual = self.bbf.zero_bridge.get_config()
       self.cleos.logger.info(f'In zero bridge config: {json.dumps(actual, indent=4)}')

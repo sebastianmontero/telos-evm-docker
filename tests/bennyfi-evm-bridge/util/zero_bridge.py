@@ -7,17 +7,20 @@ class ZeroBridge:
     self.cleos: CLEOSEVM = bbf.cleos
 
 
-  def init(self, bridge_e_address: str, token_registry_address: str, stake_local_account: str, version: str, admin: str, actor: str = None) -> dict:
+  def set_config(self, bridge_e_address: str, token_registry_address: str, stake_local_account: str, refund_delay_period_mins: int, batch_size: int, version: str, admin: str, active: bool = True, actor: str = None) -> dict:
     actor = self.bbf.bridge_z_account if actor is None else actor
     return self.__action(
-        "init",
+        "setconfig",
         actor,
         [
             bridge_e_address[2:],
             token_registry_address[2:],
             stake_local_account,
+            refund_delay_period_mins,
+            batch_size,
             version,
-            admin
+            admin,
+            active
         ]
     )
 
@@ -57,6 +60,45 @@ class ZeroBridge:
         ]
     )
   
+  def refund(self, bridge_request_id: int) -> dict:
+    return self.__action(
+        "refund",
+        self.bbf.bridge_z_account,
+        [
+          bridge_request_id
+        ]
+    )
+
+  def exec_refunds(self, call_counter: int) -> dict:
+    return self.__action(
+        "execrefunds",
+        self.bbf.bridge_z_account,
+        [
+          call_counter
+        ]
+    )
+  
+  def lapse_bridge_request(self, bridge_request_id: int) -> dict:
+    return self.__action(
+        "lpsebrdgereq",
+        self.bbf.bridge_z_account,
+        [
+          bridge_request_id
+        ]
+    )
+  
+  def reset(self, limit: int, to_delete: list[str], call_counter: int, actor: str = None) -> dict:
+    actor = self.bbf.bridge_z_account if actor is None else actor
+    return self.__action(
+        "reset",
+        actor,
+        [
+          limit,
+          to_delete,
+          call_counter
+        ]
+    )
+  
   def get_last_bridge_request(self) -> dict | None:
     results = self.__table("bridgereqs", limit=1, reverse=True)
     return results[0] if len(results) == 1 else None
@@ -64,6 +106,18 @@ class ZeroBridge:
   def get_last_stake_request(self) -> dict | None:
     results = self.__table("stakereqs", limit=1, reverse=True)
     return results[0] if len(results) == 1 else None
+  
+  def get_bridge_request_count(self) -> dict | None:
+    results = self.__table("bridgereqs")
+    return len(results)
+  
+  def get_last_stake_request(self) -> dict | None:
+    results = self.__table("stakereqs", limit=1, reverse=True)
+    return results[0] if len(results) == 1 else None
+  
+  def get_stake_request_count(self) -> dict | None:
+    results = self.__table("stakereqs")
+    return len(results)
   
   def get_config(self) -> dict | None:
     results = self.__table("bridgeconfig")
