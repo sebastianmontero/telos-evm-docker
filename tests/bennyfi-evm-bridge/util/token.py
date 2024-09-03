@@ -37,7 +37,7 @@ class Token:
             "benybridge",
             account,
             'accounts',
-            limit=1,
+            # limit=1,
             lower_bound=self.z_symbol,
             upper_bound=self.z_symbol
             )

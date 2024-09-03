@@ -100,20 +100,44 @@ class ZeroBridge:
     )
   
   def get_last_bridge_request(self) -> dict | None:
-    results = self.__table("bridgereqs", limit=1, reverse=True)
-    return results[0] if len(results) == 1 else None
+    results = self.__table(
+      "bridgereqs",
+      # limit=1,
+      reverse=True
+    )
+    return results[0] if len(results) > 0 else None
+  
+  def get_bridge_request(self, bridge_request_id: int) -> dict | None:
+    results = self.__table(
+      "bridgereqs",
+      key_type="i64",
+      index="1",
+      lower_bound=bridge_request_id,
+      upper_bound=bridge_request_id
+    )
+    return results[0] if len(results) > 0 else None
   
   def get_last_stake_request(self) -> dict | None:
-    results = self.__table("stakereqs", limit=1, reverse=True)
-    return results[0] if len(results) == 1 else None
+    results = self.__table(
+      "stakereqs",
+      # limit=1,
+      reverse=True)
+    return results[0] if len(results) > 0 else None
+  
+  def get_stake_request(self, stake_request_id: int) -> dict | None:
+    results = self.__table(
+      "stakereqs",
+      key_type="i64",
+      index="1",
+      lower_bound=stake_request_id,
+      upper_bound=stake_request_id
+      )
+    return results[0] if len(results) > 0 else None
   
   def get_bridge_request_count(self) -> dict | None:
     results = self.__table("bridgereqs")
     return len(results)
   
-  def get_last_stake_request(self) -> dict | None:
-    results = self.__table("stakereqs", limit=1, reverse=True)
-    return results[0] if len(results) == 1 else None
   
   def get_stake_request_count(self) -> dict | None:
     results = self.__table("stakereqs")
@@ -121,7 +145,7 @@ class ZeroBridge:
   
   def get_config(self) -> dict | None:
     results = self.__table("bridgeconfig")
-    return results[0] if len(results) == 1 else None
+    return results[0] if len(results) > 0 else None
   
   def __action(self, action: str, actor: str, data: list) -> dict:
     return self.cleos.push_action(

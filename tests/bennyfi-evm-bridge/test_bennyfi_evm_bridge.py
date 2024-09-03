@@ -35,54 +35,54 @@ def test_all(benybridge):
     test_util = BridgeTestUtil(bbf)
     token = bbf.tokens[0]
     bbf.configure_zero_contract()
-    # tevmc.cleos.logger.info(
-    #     "TEST BRIDGE FROM EVM TO ZERO TOKEN WITH SAME NAME DIFFERENT PRECISION WITHOUT BRIDGE FEE"
-    # )
-    # test_util.assert_bridge_evm_to_zero(
-    #     bbf.e_accounts[0], bbf.z_accounts[0], token, 847348
-    # )
+    tevmc.cleos.logger.info(
+        "TEST BRIDGE FROM EVM TO ZERO TOKEN WITH SAME NAME DIFFERENT PRECISION WITHOUT BRIDGE FEE"
+    )
+    test_util.assert_bridge_evm_to_zero(
+        bbf.e_accounts[0], bbf.z_accounts[0], token, 847348
+    )
 
-    # tevmc.cleos.logger.info(
-    #     "TEST BRIDGE FROM ZERO TO EVM TOKEN WITH SAME NAME DIFFERENT PRECISION"
-    # )
-    # test_util.assert_bridge_zero_to_evm(
-    #     bbf.z_accounts[0], bbf.e_accounts[0], token, 5173
-    # )
+    tevmc.cleos.logger.info(
+        "TEST BRIDGE FROM ZERO TO EVM TOKEN WITH SAME NAME DIFFERENT PRECISION"
+    )
+    test_util.assert_bridge_zero_to_evm(
+        bbf.z_accounts[0], bbf.e_accounts[0], token, 5173
+    )
 
-    # test_util.set_fee(1000)
-    # tevmc.cleos.logger.info(
-    #     "TEST BRIDGE MORE TOKENS FROM EVM TO ZERO TOKEN WITH SAME NAME DIFFERENT PRECISION WITH BRIDGE FEE"
-    # )
-    # token = bbf.tokens[0]
-    # test_util.assert_bridge_evm_to_zero(
-    #     bbf.e_accounts[0], bbf.z_accounts[0], token, 1349347
-    # )
+    test_util.set_fee(1000)
+    tevmc.cleos.logger.info(
+        "TEST BRIDGE MORE TOKENS FROM EVM TO ZERO TOKEN WITH SAME NAME DIFFERENT PRECISION WITH BRIDGE FEE"
+    )
+    token = bbf.tokens[0]
+    test_util.assert_bridge_evm_to_zero(
+        bbf.e_accounts[0], bbf.z_accounts[0], token, 1349347
+    )
 
-    # tevmc.cleos.logger.info(
-    #     "BRDIGE TOKENS TO STAKE LOCAL ACCOUNT WITH SAME NAME DIFFERENT PRECISION"
-    # )
-    # test_util.assert_bridge_evm_to_zero(
-    #     bbf.e_accounts[0], bbf.stake_local_account, token, 9847348
-    # )
-    # pool_id = 2
-    # yield_source = token.yield_source_name()
-    # tevmc.cleos.logger.info(
-    #     "TEST STAKE TOKEN WITH SAME NAME DIFFERENT PRECISION"
-    # )
-    # test_util.assert_stake(pool_id, yield_source, token, 4847348, 24)
+    tevmc.cleos.logger.info(
+        "BRDIGE TOKENS TO STAKE LOCAL ACCOUNT WITH SAME NAME DIFFERENT PRECISION"
+    )
+    test_util.assert_bridge_evm_to_zero(
+        bbf.e_accounts[0], bbf.stake_local_account, token, 9847348
+    )
+    pool_id = 2
+    yield_source = token.yield_source_name()
+    tevmc.cleos.logger.info(
+        "TEST STAKE TOKEN WITH SAME NAME DIFFERENT PRECISION"
+    )
+    test_util.assert_stake(pool_id, yield_source, token, 4847348, 24)
 
-    # tevmc.cleos.logger.info(
-    #     "TEST UNSTAKE TOKEN WITH SAME NAME DIFFERENT PRECISION"
-    # )
-    # test_util.assert_unstake(pool_id, yield_source, token, 3247348)
+    tevmc.cleos.logger.info(
+        "TEST UNSTAKE TOKEN WITH SAME NAME DIFFERENT PRECISION"
+    )
+    test_util.assert_unstake(pool_id, yield_source, token, 3247348)
 
-    # tevmc.cleos.logger.info(
-    #     "TEST BRIDGE FROM EVM TO ZERO TOKEN WITH DIFFERENT NAME SAME PRECISION WITH FEE"
-    # )
-    # token = bbf.tokens[1]
-    # test_util.assert_bridge_evm_to_zero(
-    #     bbf.e_accounts[0], bbf.z_accounts[0], token, 142348
-    # )
+    tevmc.cleos.logger.info(
+        "TEST BRIDGE FROM EVM TO ZERO TOKEN WITH DIFFERENT NAME SAME PRECISION WITH FEE"
+    )
+    token = bbf.tokens[1]
+    test_util.assert_bridge_evm_to_zero(
+        bbf.e_accounts[0], bbf.z_accounts[0], token, 142348
+    )
 
     token = bbf.tokens[1]
     tevmc.cleos.logger.info(

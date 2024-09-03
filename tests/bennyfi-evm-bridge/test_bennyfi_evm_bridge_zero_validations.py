@@ -914,6 +914,7 @@ def test_refund(benybridge):
     balance = token.z_balance(z_user)
     zero_bridge.refund(refund_bridge_request['bridge_request_id'])
     balance.amount += 50
+    refund_bridge_request = zero_bridge.get_bridge_request(refund_bridge_request['bridge_request_id'])
     assert token.z_balance(z_user) == balance
     assert refund_bridge_request['state'] == "refunded"
 
