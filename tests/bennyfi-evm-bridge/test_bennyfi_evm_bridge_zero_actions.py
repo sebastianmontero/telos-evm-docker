@@ -2,6 +2,7 @@
 
 import json
 import logging
+import time
 import pytest
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
@@ -700,155 +701,6 @@ def test_all(benybridge):
         zero_bridge.evmnotify(bbf.bridge_e_contract.address, encoder.encode_function_call(pool_id, yield_source, symbol, 49))
     assert "amount must be greater or equal to min_amount" in repr(e.value)
 
-    # tevmc.cleos.logger.info(
-    #     "REFUND TESTS"
-    # )
-
-    # tevmc.cleos.logger.info(
-    #     "refund: Should fail for non existent bridge request"
-    # )
-    # with pytest.raises(Exception) as e:
-    #     zero_bridge.refund(50)
-    # assert "bridge request not found" in repr(e.value)
-    
-    # tevmc.cleos.logger.info(
-    #     "Getting last completed bridge request and lapsing it to verify that it is not refunded"
-    # )
-    # last_completed_bridge_request = zero_bridge.get_last_bridge_request()
-    # assert last_completed_bridge_request['state'] == "completed"
-    # zero_bridge.lapse_bridge_request(last_completed_bridge_request['bridge_request_id'])
-
-    # tevmc.cleos.logger.info(
-    #     "refund: Should fail for bridge request that has been completed"
-    # )
-    # with pytest.raises(Exception) as e:
-    #     zero_bridge.refund(last_completed_bridge_request['bridge_request_id'])
-    # assert "bridge request must be pending" in repr(e.value)
-    
-    # tevmc.cleos.logger.info(
-    #     "Set an invalid evm bridge contract address in order to be able to create requests that require refunds"
-    # )
-
-    # zero_bridge.set_config(
-    #     bbf.token_registry_contract.address,
-    #     bbf.token_registry_contract.address,
-    #     bbf.stake_local_account,
-    #     refund_delay_period_mins,
-    #     batch_size,
-    #     version,
-    #     admin)
-    
-    # tevmc.cleos.logger.info(
-    #     "Create refund request"
-    # )
-    # result = bbf.zero_bridge.bridge_z_to_e(z_user, e_user.address, token.to_asset(50))
-    # tevmc.cleos.logger.info(json.dumps(result, indent=4))
-
-    # refund_bridge_request = zero_bridge.get_last_bridge_request()
-    # assert refund_bridge_request['state'] == "completed"
-
-    # tevmc.cleos.logger.info(
-    #     "refund: Should fail for bridge request for which refund delay has not expired"
-    # )
-    # with pytest.raises(Exception) as e:
-    #     zero_bridge.refund(refund_bridge_request['bridge_request_id'])
-    # assert "refund delay period has not expired" in repr(e.value)
-
-    # zero_bridge.lapse_bridge_request(refund_bridge_request['bridge_request_id'])
-
-    # tevmc.cleos.logger.info(
-    #     "refund: Should work for bridge request for which refund delay has expired and in pending state"
-    # )
-    # balance = token.z_balance(z_user)
-    # zero_bridge.refund(refund_bridge_request['bridge_request_id'])
-    # balance.amount += 50
-    # assert token.z_balance(z_user) == balance
-
-    
-    # tevmc.cleos.logger.info(
-    #     "RESET TESTS"
-    # )
-    # tevmc.cleos.logger.info(
-    #     "Populate tables"
-    # )
-
-    # test_util.assert_bridge_zero_to_evm(
-    #     z_user, e_user, token, 50
-    # )
-    # test_util.assert_bridge_zero_to_evm(
-    #     z_user, e_user, token, 51
-    # )
-    # test_util.assert_bridge_zero_to_evm(
-    #     z_user, e_user, token, 52
-    # )
-
-    # test_util.assert_stake(
-    #     30, yield_source, token, 100, 50
-    # )
-    # test_util.assert_stake(
-    #     31, yield_source, token, 100, 50
-    # )
-
-    # bridge_request_count = zero_bridge.get_bridge_request_count()
-    # assert bridge_request_count  > 2
-    # stake_request_count = zero_bridge.get_stake_request_count()
-    # assert stake_request_count  > 2
-
-    # tevmc.cleos.logger.info(
-    #     "reset: Should fail when called from non contract account"
-    # )
-    # with pytest.raises(ChainAPIError) as e:
-    #     zero_bridge.reset(10, ["bridgeconfig"], 1, bbf.bridge_z_admin)
-    # assert  "missing authority of" in repr(e.value)
-
-    # zero_bridge.reset(10, ["bridgeconfig"], 2)
-    # assert zero_bridge.get_bridge_request_count() == bridge_request_count
-    # assert zero_bridge.get_stake_request_count() == stake_request_count
-
-    # zero_bridge.reset(1, ["bridgereqs"], 3)
-    # assert zero_bridge.get_config() is None
-
-    # bridge_request_count -= 1
-    # assert zero_bridge.get_bridge_request_count() == bridge_request_count
-    # assert zero_bridge.get_stake_request_count() == stake_request_count
-
-    # zero_bridge.reset(1, ["stakereqs"], 4)
-    # assert zero_bridge.get_config() is None
-
-    # stake_request_count -= 1
-    # assert zero_bridge.get_bridge_request_count() == bridge_request_count
-    # assert zero_bridge.get_stake_request_count() == stake_request_count
-
-    # request_count = bridge_request_count + stake_request_count
-    # call_counter = 5
-    # while request_count > 0:
-    #     zero_bridge.reset(2, ["bridgereqs", "stakereqs"], call_counter)
-    #     call_counter += 1
-    #     request_count = max(0, request_count - 2)
-    #     assert zero_bridge.get_bridge_request_count() + zero_bridge.get_stake_request_count() == request_count
-
-
-def test_refund(benybridge):
-    bbf = benybridge
-    local_w3 = bbf.local_w3
-    tevmc = bbf.tevmc
-    tevmc.logger.setLevel(logging.DEBUG)
-    test_util = BridgeTestUtil(bbf)
-    token = bbf.tokens[0]
-    zero_bridge = bbf.zero_bridge
-    bbf.configure_zero_contract()
-
-    z_user = bbf.z_accounts[0]
-    e_user = bbf.e_accounts[0]
-
-    test_util.assert_bridge_evm_to_zero(
-        e_user, z_user, token, 1000000
-    )
-
-    test_util.assert_bridge_zero_to_evm(
-        z_user, e_user, token, 100
-    )
-
     tevmc.cleos.logger.info(
         "REFUND TESTS"
     )
@@ -918,17 +770,31 @@ def test_refund(benybridge):
     assert token.z_balance(z_user) == balance
     assert refund_bridge_request['state'] == "refunded"
 
+    tevmc.cleos.logger.info(
+        "refund: Should fail for bridge request that has been refunded"
+    )
+    time.sleep(1)
+    
+    with pytest.raises(Exception) as e:
+        zero_bridge.refund(refund_bridge_request['bridge_request_id'])
+    assert "bridge request must be pending" in repr(e.value)
 
-def test_exec_refunds(benybridge):
-    bbf = benybridge
-    local_w3 = bbf.local_w3
-    tevmc = bbf.tevmc
-    tevmc.logger.setLevel(logging.DEBUG)
-    test_util = BridgeTestUtil(bbf)
-    token = bbf.tokens[0]
-    zero_bridge = bbf.zero_bridge
-    bbf.configure_zero_contract()
-
+    tevmc.cleos.logger.info(
+        "Reset bridge contract to a valid configuration"
+    )
+    zero_bridge.set_config(
+        bbf.bridge_e_contract.address,
+        bbf.token_registry_contract.address,
+        bbf.stake_local_account,
+        refund_delay_period_mins,
+        batch_size,
+        version,
+        admin)
+    
+    tevmc.cleos.logger.info(
+        "EXECREFUNDS TESTS"
+    )
+    
     z_user1 = bbf.z_accounts[0]
     z_user2 = bbf.z_accounts[1]
     e_user = bbf.e_accounts[0]
@@ -945,9 +811,6 @@ def test_exec_refunds(benybridge):
         z_user1, e_user, token, 100
     )
 
-    tevmc.cleos.logger.info(
-        "EXECREFUNDS TESTS"
-    )
 
     tevmc.cleos.logger.info(
         "execrefunds: Should fail for non existent bridge request"
@@ -967,10 +830,6 @@ def test_exec_refunds(benybridge):
     tevmc.cleos.logger.info(
         "Set an invalid evm bridge contract address in order to be able to create requests that require refunds"
     )
-    refund_delay_period_mins = 5
-    batch_size = 40
-    admin = bbf.bridge_z_admin
-    version = "v1.0"
     zero_bridge.set_config(
         bbf.token_registry_contract.address,
         bbf.token_registry_contract.address,
@@ -1011,6 +870,12 @@ def test_exec_refunds(benybridge):
         zero_bridge.exec_refunds(1)
     assert "Refunds.[nothing-to-process]" in repr(e.value)
 
+
+    last_completed_bridge_request = zero_bridge.get_bridge_request(last_completed_bridge_request['bridge_request_id'])
+    refund_bridge_request1 = zero_bridge.get_bridge_request(refund_bridge_request1['bridge_request_id'])
+    refund_bridge_request2 = zero_bridge.get_bridge_request(refund_bridge_request2['bridge_request_id'])
+    refund_bridge_request3 = zero_bridge.get_bridge_request(refund_bridge_request3['bridge_request_id'])
+
     assert last_completed_bridge_request['state'] == "completed"
     assert refund_bridge_request1['state'] == "pending"
     assert refund_bridge_request2['state'] == "pending"
@@ -1026,6 +891,11 @@ def test_exec_refunds(benybridge):
     zero_bridge.exec_refunds(2)
     user1_balance.amount += Asset.from_str(refund_bridge_request1['quantity']).amount
     
+    last_completed_bridge_request = zero_bridge.get_bridge_request(last_completed_bridge_request['bridge_request_id'])
+    refund_bridge_request1 = zero_bridge.get_bridge_request(refund_bridge_request1['bridge_request_id'])
+    refund_bridge_request2 = zero_bridge.get_bridge_request(refund_bridge_request2['bridge_request_id'])
+    refund_bridge_request3 = zero_bridge.get_bridge_request(refund_bridge_request3['bridge_request_id'])
+
     assert refund_bridge_request1['state'] == "refunded"
     assert refund_bridge_request2['state'] == "pending"
     assert refund_bridge_request3['state'] == "pending"
@@ -1042,9 +912,101 @@ def test_exec_refunds(benybridge):
     user1_balance.amount += Asset.from_str(refund_bridge_request3['quantity']).amount
     user2_balance.amount += Asset.from_str(refund_bridge_request2['quantity']).amount
     
+    last_completed_bridge_request = zero_bridge.get_bridge_request(last_completed_bridge_request['bridge_request_id'])
+    refund_bridge_request1 = zero_bridge.get_bridge_request(refund_bridge_request1['bridge_request_id'])
+    refund_bridge_request2 = zero_bridge.get_bridge_request(refund_bridge_request2['bridge_request_id'])
+    refund_bridge_request3 = zero_bridge.get_bridge_request(refund_bridge_request3['bridge_request_id'])
+
     assert refund_bridge_request1['state'] == "refunded"
     assert refund_bridge_request2['state'] == "refunded"
     assert refund_bridge_request3['state'] == "refunded"
 
     assert token.z_balance(z_user1) == user1_balance
     assert token.z_balance(z_user2) == user2_balance
+
+    tevmc.cleos.logger.info(
+        "Reset bridge contract to a valid configuration"
+    )
+    zero_bridge.set_config(
+        bbf.bridge_e_contract.address,
+        bbf.token_registry_contract.address,
+        bbf.stake_local_account,
+        refund_delay_period_mins,
+        batch_size,
+        version,
+        admin)
+
+    
+    tevmc.cleos.logger.info(
+        "RESET TESTS"
+    )
+    tevmc.cleos.logger.info(
+        "Populating bridge request table"
+    )
+
+    test_util.assert_bridge_zero_to_evm(
+        z_user, e_user, token, 52
+    )
+    tevmc.cleos.logger.info(
+        "Populating bridge request table 2"
+    )
+    test_util.assert_bridge_zero_to_evm(
+        z_user, e_user, token, 53
+    )
+
+    tevmc.cleos.logger.info(
+        "Populating bridge request table 3"
+    )
+    test_util.assert_bridge_zero_to_evm(
+        z_user, e_user, token, 54
+    )
+
+    tevmc.cleos.logger.info(
+        "Populating stake request table"
+    )
+
+    test_util.assert_stake(
+        30, yield_source, token, 100, 50
+    )
+    test_util.assert_stake(
+        31, yield_source, token, 100, 50
+    )
+
+    bridge_request_count = zero_bridge.get_bridge_request_count()
+    assert bridge_request_count  > 2
+    stake_request_count = zero_bridge.get_stake_request_count()
+    assert stake_request_count  > 2
+
+    tevmc.cleos.logger.info(
+        "reset: Should fail when called from non contract account"
+    )
+    with pytest.raises(ChainAPIError) as e:
+        zero_bridge.reset(10, ["bridgeconfig"], 1, bbf.bridge_z_admin)
+    assert  "missing authority of" in repr(e.value)
+
+    zero_bridge.reset(10, ["bridgeconfig"], 2)
+    assert zero_bridge.get_bridge_request_count() == bridge_request_count
+    assert zero_bridge.get_stake_request_count() == stake_request_count
+
+    zero_bridge.reset(1, ["bridgereqs"], 3)
+    assert zero_bridge.get_config() is None
+
+    bridge_request_count -= 1
+    assert zero_bridge.get_bridge_request_count() == bridge_request_count
+    assert zero_bridge.get_stake_request_count() == stake_request_count
+
+    zero_bridge.reset(1, ["stakereqs"], 4)
+    assert zero_bridge.get_config() is None
+
+    stake_request_count -= 1
+    assert zero_bridge.get_bridge_request_count() == bridge_request_count
+    assert zero_bridge.get_stake_request_count() == stake_request_count
+
+    request_count = bridge_request_count + stake_request_count
+    call_counter = 5
+    while request_count > 0:
+        zero_bridge.reset(2, ["bridgereqs", "stakereqs"], call_counter)
+        call_counter += 1
+        request_count = max(0, request_count - 2)
+        assert zero_bridge.get_bridge_request_count() + zero_bridge.get_stake_request_count() == request_count
+
