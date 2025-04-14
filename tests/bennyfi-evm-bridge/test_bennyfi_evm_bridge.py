@@ -66,14 +66,10 @@ def test_all(benybridge):
     )
     pool_id = 2
     yield_source = token.yield_source_name()
-    tevmc.cleos.logger.info(
-        "TEST STAKE TOKEN WITH SAME NAME DIFFERENT PRECISION"
-    )
+    tevmc.cleos.logger.info("TEST STAKE TOKEN WITH SAME NAME DIFFERENT PRECISION")
     test_util.assert_stake(pool_id, yield_source, token, 4847348, 24)
 
-    tevmc.cleos.logger.info(
-        "TEST UNSTAKE TOKEN WITH SAME NAME DIFFERENT PRECISION"
-    )
+    tevmc.cleos.logger.info("TEST UNSTAKE TOKEN WITH SAME NAME DIFFERENT PRECISION")
     test_util.assert_unstake(pool_id, yield_source, token, 3247348)
 
     tevmc.cleos.logger.info(
@@ -108,13 +104,8 @@ def test_all(benybridge):
 
     pool_id = 5
     yield_source = token.yield_source_name()
-    tevmc.cleos.logger.info(
-        "TEST STAKE TOKEN WITH DIFFERENT NAME SAME PRECISION"
-    )
+    tevmc.cleos.logger.info("TEST STAKE TOKEN WITH DIFFERENT NAME SAME PRECISION")
     test_util.assert_stake(pool_id, yield_source, token, 28453, 24)
 
-    tevmc.cleos.logger.info(
-        "TEST UNSTAKE TOKEN WITH SAME NAME DIFFERENT PRECISION"
-    )
+    tevmc.cleos.logger.info("TEST UNSTAKE TOKEN WITH SAME NAME DIFFERENT PRECISION")
     test_util.assert_unstake(pool_id, yield_source, token, 28453)
-
