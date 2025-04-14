@@ -128,10 +128,16 @@ class BridgeTestUtil:
       result = self.bbf.zero_bridge.notify_processed_e_to_z_reqs(bridge_request_id)
       self.cleos.logger.info(json.dumps(result, indent=4))
       self.assert_bridge_e_to_zero_req_exists(bridge_request_id, exists=False)
-
+      self.assert_processed_bridge_e_to_zero_req_exists(processed_bridge_e_to_z_req['id'])
+      #   Make sure the e user and e bridge balances were not affected as it is not a refund
+      assert token.e_balance(e_user.address) == e_user_balance, f"e user balance does not match {token.e_balance(e_user.address)} != {e_user_balance}"
+      assert token.e_balance(self.bbf.bridge_e_contract.address) == e_bridge_balance, f"e bridge balance does not match {token.e_balance(self.bbf.bridge_e_contract.address)} != {e_bridge_balance}"
+      
       self.cleos.logger.info("Remove processed bridge evm to zero request...")
       result = self.bbf.zero_bridge.remove_processed_e_to_z_reqs(bridge_request_id)
       self.cleos.logger.info(json.dumps(result, indent=4))
+      self.assert_processed_bridge_e_to_zero_req_exists(processed_bridge_e_to_z_req['id'], exists=False)
+      
       
       
 
@@ -143,13 +149,12 @@ class BridgeTestUtil:
       self.cleos.logger.info(f"Bridge evm to zero request not found error:{e}\n--")
       assert not exists, f"bridge evm to zero request with id {bridge_request_id} does not exist"
 
-  def assert_processed_bridge_e_to_zero_req_exists(self, bridge_request_id: int, exists: bool = True):
-    try:
-      self.bbf.evm_bridge.e_to_z_req_by_id(bridge_request_id)
-      assert exists, f"bridge evm to zero request with id {bridge_request_id} exists"
-    except Exception as e:
-      self.cleos.logger.info(f"Bridge evm to zero request not found error:{e}\n")
-      assert not exists, f"bridge evm to zero request with id {bridge_request_id} does not exist"
+  def assert_processed_bridge_e_to_zero_req_exists(self, id: int, exists: bool = True):
+    request = self.bbf.zero_bridge.get_processed_bridge_e_to_z_request(id)
+    if exists:
+      assert request is not None, f"processed bridge evm to zero request with id {id} does not exist"
+    else:
+      assert request is None, f"processed bridge evm to zero request with id {id} exists"
 
   def assert_bridge_zero_to_evm(
       self,
