@@ -36,6 +36,30 @@ class ZeroBridge:
         ]
     )
   
+  def process_e_to_z_reqs(self, counter: int) -> dict:
+    # TODO: ADD equivalent to open permissions account
+    return self.__action(
+        "prevmtozreqs",
+        "eosio",
+        [counter]
+    )
+  
+  def notify_processed_e_to_z_reqs(self, counter: int) -> dict:
+    # TODO: ADD equivalent to open permissions account
+    return self.__action(
+        "ntpretozreqs",
+        "eosio",
+        [counter]
+    )
+
+  def remove_processed_e_to_z_reqs(self, counter: int) -> dict:
+    # TODO: ADD equivalent to open permissions account
+    return self.__action(
+        "rmpretozreqs",
+        "eosio",
+        [counter]
+    )
+  
   def stake(self, pool_id: int, yield_source: str, asset_amount: str | Asset, staking_period_hrs: int, actor: str = None) -> dict:
     actor = self.bbf.stake_local_account if actor is None else actor
     return self.__action(
@@ -99,7 +123,25 @@ class ZeroBridge:
         ]
     )
   
-  def get_last_bridge_request(self) -> dict | None:
+  def get_last_processed_bridge_e_to_z_request(self) -> dict | None:
+    results = self.__table(
+      "procetozreqs",
+      # limit=1,
+      reverse=True
+    )
+    return results[0] if len(results) > 0 else None
+  
+  def get_processed_bridge_e_to_z_request(self, id: int) -> dict | None:
+    results = self.__table(
+      "procetozreqs",
+      key_type="i64",
+      index="1",
+      lower_bound=id,
+      upper_bound=id
+    )
+    return results[0] if len(results) > 0 else None
+  
+  def get_last_bridge_z_to_e_request(self) -> dict | None:
     results = self.__table(
       "bridgereqs",
       # limit=1,
@@ -107,7 +149,7 @@ class ZeroBridge:
     )
     return results[0] if len(results) > 0 else None
   
-  def get_bridge_request(self, bridge_request_id: int) -> dict | None:
+  def get_bridge_z_to_e_request(self, bridge_request_id: int) -> dict | None:
     results = self.__table(
       "bridgereqs",
       key_type="i64",
@@ -134,7 +176,7 @@ class ZeroBridge:
       )
     return results[0] if len(results) > 0 else None
   
-  def get_bridge_request_count(self) -> dict | None:
+  def get_bridge_z_to_e_request_count(self) -> dict | None:
     results = self.__table("bridgereqs")
     return len(results)
   

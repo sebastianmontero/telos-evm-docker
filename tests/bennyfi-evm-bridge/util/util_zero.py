@@ -1,3 +1,4 @@
+import datetime
 from leap.cleos import CLEOS
 from leap.tokens import DEFAULT_SYS_TOKEN_CODE
 
@@ -5,6 +6,10 @@ class UtilZero:
   def __init__(self, cleos: CLEOS):
     self.cleos = cleos
 
+  @staticmethod
+  def parse_timestamp(timestamp) -> datetime: 
+     return datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")
+  
   def create_delegated_account(
         self,
         owner: str,
@@ -79,3 +84,4 @@ class UtilZero:
 
         return self.cleos.push_actions(
             actions, self.cleos.private_keys[owner])
+

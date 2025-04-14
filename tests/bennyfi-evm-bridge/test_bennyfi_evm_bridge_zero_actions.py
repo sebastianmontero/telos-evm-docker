@@ -715,7 +715,7 @@ def test_all(benybridge):
     tevmc.cleos.logger.info(
         "Getting last completed bridge request and lapsing it to verify that it is not refunded"
     )
-    last_completed_bridge_request = zero_bridge.get_last_bridge_request()
+    last_completed_bridge_request = zero_bridge.get_last_bridge_z_to_e_request()
     assert last_completed_bridge_request['state'] == "completed"
     zero_bridge.lapse_bridge_request(last_completed_bridge_request['bridge_request_id'])
 
@@ -748,7 +748,7 @@ def test_all(benybridge):
     result = bbf.zero_bridge.bridge_z_to_e(z_user, e_user.address, token.to_asset(50))
     tevmc.cleos.logger.info(json.dumps(result, indent=4))
 
-    refund_bridge_request = zero_bridge.get_last_bridge_request()
+    refund_bridge_request = zero_bridge.get_last_bridge_z_to_e_request()
     assert refund_bridge_request['state'] == "pending"
 
     tevmc.cleos.logger.info(
@@ -766,7 +766,7 @@ def test_all(benybridge):
     balance = token.z_balance(z_user)
     zero_bridge.refund(refund_bridge_request['bridge_request_id'])
     balance.amount += 50
-    refund_bridge_request = zero_bridge.get_bridge_request(refund_bridge_request['bridge_request_id'])
+    refund_bridge_request = zero_bridge.get_bridge_z_to_e_request(refund_bridge_request['bridge_request_id'])
     assert token.z_balance(z_user) == balance
     assert refund_bridge_request['state'] == "refunded"
 
@@ -822,7 +822,7 @@ def test_all(benybridge):
     tevmc.cleos.logger.info(
         "Getting last completed bridge request and lapsing it to verify that it is not refunded"
     )
-    last_completed_bridge_request = zero_bridge.get_last_bridge_request()
+    last_completed_bridge_request = zero_bridge.get_last_bridge_z_to_e_request()
     assert last_completed_bridge_request['state'] == "completed"
     zero_bridge.lapse_bridge_request(last_completed_bridge_request['bridge_request_id'])
 
@@ -845,19 +845,19 @@ def test_all(benybridge):
     result = bbf.zero_bridge.bridge_z_to_e(z_user1, e_user.address, token.to_asset(50))
     tevmc.cleos.logger.info(json.dumps(result, indent=4))
 
-    refund_bridge_request1 = zero_bridge.get_last_bridge_request()
+    refund_bridge_request1 = zero_bridge.get_last_bridge_z_to_e_request()
     assert refund_bridge_request1['state'] == "pending"
     
     result = bbf.zero_bridge.bridge_z_to_e(z_user2, e_user.address, token.to_asset(251))
     tevmc.cleos.logger.info(json.dumps(result, indent=4))
 
-    refund_bridge_request2 = zero_bridge.get_last_bridge_request()
+    refund_bridge_request2 = zero_bridge.get_last_bridge_z_to_e_request()
     assert refund_bridge_request2['state'] == "pending"
 
     result = bbf.zero_bridge.bridge_z_to_e(z_user1, e_user.address, token.to_asset(507))
     tevmc.cleos.logger.info(json.dumps(result, indent=4))
 
-    refund_bridge_request3 = zero_bridge.get_last_bridge_request()
+    refund_bridge_request3 = zero_bridge.get_last_bridge_z_to_e_request()
     assert refund_bridge_request3['state'] == "pending"
     
     user1_balance = token.z_balance(z_user1)
@@ -871,10 +871,10 @@ def test_all(benybridge):
     assert "Refunds.[nothing-to-process]" in repr(e.value)
 
 
-    last_completed_bridge_request = zero_bridge.get_bridge_request(last_completed_bridge_request['bridge_request_id'])
-    refund_bridge_request1 = zero_bridge.get_bridge_request(refund_bridge_request1['bridge_request_id'])
-    refund_bridge_request2 = zero_bridge.get_bridge_request(refund_bridge_request2['bridge_request_id'])
-    refund_bridge_request3 = zero_bridge.get_bridge_request(refund_bridge_request3['bridge_request_id'])
+    last_completed_bridge_request = zero_bridge.get_bridge_z_to_e_request(last_completed_bridge_request['bridge_request_id'])
+    refund_bridge_request1 = zero_bridge.get_bridge_z_to_e_request(refund_bridge_request1['bridge_request_id'])
+    refund_bridge_request2 = zero_bridge.get_bridge_z_to_e_request(refund_bridge_request2['bridge_request_id'])
+    refund_bridge_request3 = zero_bridge.get_bridge_z_to_e_request(refund_bridge_request3['bridge_request_id'])
 
     assert last_completed_bridge_request['state'] == "completed"
     assert refund_bridge_request1['state'] == "pending"
@@ -891,10 +891,10 @@ def test_all(benybridge):
     zero_bridge.exec_refunds(2)
     user1_balance.amount += Asset.from_str(refund_bridge_request1['quantity']).amount
     
-    last_completed_bridge_request = zero_bridge.get_bridge_request(last_completed_bridge_request['bridge_request_id'])
-    refund_bridge_request1 = zero_bridge.get_bridge_request(refund_bridge_request1['bridge_request_id'])
-    refund_bridge_request2 = zero_bridge.get_bridge_request(refund_bridge_request2['bridge_request_id'])
-    refund_bridge_request3 = zero_bridge.get_bridge_request(refund_bridge_request3['bridge_request_id'])
+    last_completed_bridge_request = zero_bridge.get_bridge_z_to_e_request(last_completed_bridge_request['bridge_request_id'])
+    refund_bridge_request1 = zero_bridge.get_bridge_z_to_e_request(refund_bridge_request1['bridge_request_id'])
+    refund_bridge_request2 = zero_bridge.get_bridge_z_to_e_request(refund_bridge_request2['bridge_request_id'])
+    refund_bridge_request3 = zero_bridge.get_bridge_z_to_e_request(refund_bridge_request3['bridge_request_id'])
 
     assert refund_bridge_request1['state'] == "refunded"
     assert refund_bridge_request2['state'] == "pending"
@@ -912,10 +912,10 @@ def test_all(benybridge):
     user1_balance.amount += Asset.from_str(refund_bridge_request3['quantity']).amount
     user2_balance.amount += Asset.from_str(refund_bridge_request2['quantity']).amount
     
-    last_completed_bridge_request = zero_bridge.get_bridge_request(last_completed_bridge_request['bridge_request_id'])
-    refund_bridge_request1 = zero_bridge.get_bridge_request(refund_bridge_request1['bridge_request_id'])
-    refund_bridge_request2 = zero_bridge.get_bridge_request(refund_bridge_request2['bridge_request_id'])
-    refund_bridge_request3 = zero_bridge.get_bridge_request(refund_bridge_request3['bridge_request_id'])
+    last_completed_bridge_request = zero_bridge.get_bridge_z_to_e_request(last_completed_bridge_request['bridge_request_id'])
+    refund_bridge_request1 = zero_bridge.get_bridge_z_to_e_request(refund_bridge_request1['bridge_request_id'])
+    refund_bridge_request2 = zero_bridge.get_bridge_z_to_e_request(refund_bridge_request2['bridge_request_id'])
+    refund_bridge_request3 = zero_bridge.get_bridge_z_to_e_request(refund_bridge_request3['bridge_request_id'])
 
     assert refund_bridge_request1['state'] == "refunded"
     assert refund_bridge_request2['state'] == "refunded"
@@ -972,7 +972,7 @@ def test_all(benybridge):
         31, yield_source, token, 100, 50
     )
 
-    bridge_request_count = zero_bridge.get_bridge_request_count()
+    bridge_request_count = zero_bridge.get_bridge_z_to_e_request_count()
     assert bridge_request_count  > 2
     stake_request_count = zero_bridge.get_stake_request_count()
     assert stake_request_count  > 2
@@ -985,21 +985,21 @@ def test_all(benybridge):
     assert  "missing authority of" in repr(e.value)
 
     zero_bridge.reset(10, ["bridgeconfig"], 2)
-    assert zero_bridge.get_bridge_request_count() == bridge_request_count
+    assert zero_bridge.get_bridge_z_to_e_request_count() == bridge_request_count
     assert zero_bridge.get_stake_request_count() == stake_request_count
 
     zero_bridge.reset(1, ["bridgereqs"], 3)
     assert zero_bridge.get_config() is None
 
     bridge_request_count -= 1
-    assert zero_bridge.get_bridge_request_count() == bridge_request_count
+    assert zero_bridge.get_bridge_z_to_e_request_count() == bridge_request_count
     assert zero_bridge.get_stake_request_count() == stake_request_count
 
     zero_bridge.reset(1, ["stakereqs"], 4)
     assert zero_bridge.get_config() is None
 
     stake_request_count -= 1
-    assert zero_bridge.get_bridge_request_count() == bridge_request_count
+    assert zero_bridge.get_bridge_z_to_e_request_count() == bridge_request_count
     assert zero_bridge.get_stake_request_count() == stake_request_count
 
     request_count = bridge_request_count + stake_request_count
@@ -1008,5 +1008,5 @@ def test_all(benybridge):
         zero_bridge.reset(2, ["bridgereqs", "stakereqs"], call_counter)
         call_counter += 1
         request_count = max(0, request_count - 2)
-        assert zero_bridge.get_bridge_request_count() + zero_bridge.get_stake_request_count() == request_count
+        assert zero_bridge.get_bridge_z_to_e_request_count() + zero_bridge.get_stake_request_count() == request_count
 

@@ -49,7 +49,7 @@ def test_all(benybridge):
         bbf.z_accounts[0], bbf.e_accounts[0], token, 5173
     )
 
-    test_util.set_fee(1000)
+    bbf.evm_bridge.set_fee(1000)
     tevmc.cleos.logger.info(
         "TEST BRIDGE MORE TOKENS FROM EVM TO ZERO TOKEN WITH SAME NAME DIFFERENT PRECISION WITH BRIDGE FEE"
     )

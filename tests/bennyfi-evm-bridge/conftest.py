@@ -35,6 +35,7 @@ from util.util_zero import UtilZero
 from util.evm_transaction_signer import EVMTransactionSigner
 from util.token import Token
 from util.zero_bridge import ZeroBridge
+from util.evm_bridge import EVMBridge
 
 DEFAULT_GAS_PRICE = 524799638144
 DEFAULT_GAS = 991000
@@ -58,6 +59,7 @@ class BenyBridgeFixture:
         self.evm_transaction_signer.add_account(tevmc.cleos.evm_default_account)
         self.util_z = UtilZero(self.cleos)
         self.zero_bridge = ZeroBridge(self)
+        self.evm_bridge = EVMBridge(self)
         self.tokens = [
             Token(self, "mta", "MTA", "MTA", 8, 6, 50, 100),
             Token(self, "mtb", "MTB", "WMTB", 7, 4, 4, 100),
