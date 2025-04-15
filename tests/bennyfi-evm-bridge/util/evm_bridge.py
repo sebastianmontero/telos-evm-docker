@@ -1,3 +1,4 @@
+import time
 from eth_account.signers.local import LocalAccount
 from util.token import Token
 
@@ -56,3 +57,13 @@ class EVMBridge:
             receipt
         )
         return {"receipt": receipt, "event": events[0]}
+    
+
+    def get_events(self, event_name: str, count: int) -> list:
+        time.sleep(1)
+        events = self.bbf.bridge_e_contract.events[event_name]().get_logs(
+            fromBlock=0,
+            toBlock='latest',
+        )
+        assert len(events) >= count, f"Expected at least {count} events, got {len(events)}"
+        return events[-count:]

@@ -78,8 +78,8 @@ class BridgeTestUtil:
 
         expected_bridge_request = {
             'id': bridge_request_id,
-            'token': token.contract.address,
-            'user': e_user.address,
+            'token': token,
+            'user': e_user,
             'amount': e_amount,
             'zeroAmount': z_amount,
             'destinationAccount': z_user,
@@ -138,14 +138,6 @@ class BridgeTestUtil:
 
         self.assert_bridge_e_to_zero_req_exists(bridge_request_id)
 
-        time.sleep(2)
-        logs = self.bbf.local_w3.eth.get_logs({
-            'fromBlock': 0,
-            'toBlock': 'latest',
-            'address': self.bbf.bridge_e_contract.address,
-            # 'topics': ['0x0986011152c30f9a78f46871728cf2ad9258eaaaf8dc602cc434d9cc6053909a']
-        })
-        self.cleos.logger.info(f"Event logs {logs}")
         self.cleos.logger.info("Notify processed bridge evm to zero request...")
         result = self.bbf.zero_bridge.notify_processed_e_to_z_reqs(bridge_request_id)
         self.cleos.logger.info(json.dumps(result, indent=4))
@@ -162,6 +154,21 @@ class BridgeTestUtil:
         ), (
             f"e bridge balance does not match {token.e_balance(self.bbf.bridge_e_contract.address)} != {e_bridge_balance}"
         )
+
+        # time.sleep(1)
+        # logs = self.bbf.bridge_e_contract.events.BridgeEVMToZeroRequestCompleted().get_logs(
+        #     fromBlock=0,
+        #     toBlock='latest',
+        # )
+        # self.cleos.logger.info(f"Event logs {logs}")
+        expected_event = {
+            'bridgeRequestId': bridge_request_id,
+            'to': z_user,
+            'token': token.contract.address,
+            'sender': e_user.address,
+            'amount': e_amount,
+        }
+        self.assert_bridge_e_to_z_req_completed_event(self.bbf.evm_bridge.get_events('BridgeEVMToZeroRequestCompleted', 1)[0], expected_event)
 
         self.cleos.logger.info("Remove processed bridge evm to zero request...")
         result = self.bbf.zero_bridge.remove_processed_e_to_z_reqs(bridge_request_id)
@@ -308,11 +315,11 @@ class BridgeTestUtil:
         assert actual[0] == expected["id"], (
             f"evm to zero request ids does not match {actual[0]} != {expected['id']}"
         )
-        assert actual[1] == expected["token"], (
-            f"token address does not match {actual[1]} != {expected['token']}"
+        assert actual[1] == expected["token"].contract.address, (
+            f"token address does not match {actual[1]} != {expected['token'].contract.address}"
         )
-        assert actual[2] == expected["user"], (
-            f"sender address does not match {actual[2]} != {expected['user']}"
+        assert actual[2] == expected["user"].address, (
+            f"sender address does not match {actual[2]} != {expected['user'].address}"
         )
         assert actual[3] == expected["amount"], (
             f"amount does not match {actual[3]} != {expected['amount']}"
@@ -327,16 +334,27 @@ class BridgeTestUtil:
         assert actual[7] == expected["zeroSymbol"], (
             f"zero symbol does not match {actual[6]} != {expected['zeroSymbol']}"
         )
-
+    
     def assert_bridge_e_to_z_req_queued_event(self, actual: dict, expected: dict):
+        self.assert_bridge_e_to_z_req_base_event(actual, expected, "BridgeEVMToZeroRequestQueued")
+
+    def assert_bridge_e_to_z_req_completed_event(self, actual: dict, expected: dict):
+        self.assert_bridge_e_to_z_req_base_event(actual, expected, "BridgeEVMToZeroRequestCompleted")
+    
+    def assert_bridge_e_to_z_req_base_event(self, actual: dict, expected: dict, event_name: str):
         self.cleos.logger.info(f"event: {actual}")
-        assert actual["event"] == "BridgeEVMToZeroRequestQueued"
+        assert actual["event"] == event_name, (
+            f"event name does not match {actual['event']} != {expected['event']}"
+        )
         args = actual["args"]
         assert args["bridgeRequestId"] == expected["bridgeRequestId"], (
             f"evm to zero request ids does not match {args['bridgeRequestId']} != {expected['bridgeRequestId']}"
         )
-        assert args["to"] == self.bbf.local_w3.keccak(text=expected["to"]), (
-            f"to account does not match {args['to']} != {self.bbf.local_w3.keccak(text=expected['to'])}"
+        # assert args["to"] == self.bbf.local_w3.keccak(text=expected["to"]), (
+        #     f"to account does not match {args['to']} != {self.bbf.local_w3.keccak(text=expected['to'])}"
+        # )
+        assert args["to"] == expected["to"], (
+            f"to account does not match {args['to']} != {expected['to']}"
         )
         assert args["token"] == expected["token"], (
             f"token address does not match {args['token']} != {expected['token']}"
