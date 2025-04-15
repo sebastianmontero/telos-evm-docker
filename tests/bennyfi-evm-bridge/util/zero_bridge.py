@@ -105,9 +105,9 @@ class ZeroBridge:
         )
         return results[0] if len(results) > 0 else None
 
-    def get_processed_bridge_e_to_z_request(self, id: int) -> dict | None:
+    def get_processed_bridge_e_to_z_request(self, call_id: int) -> dict | None:
         results = self.__table(
-            "procetozreqs", key_type="i64", index="1", lower_bound=id, upper_bound=id
+            "procetozreqs", key_type="i64", index="1", lower_bound=call_id, upper_bound=call_id
         )
         return results[0] if len(results) > 0 else None
 

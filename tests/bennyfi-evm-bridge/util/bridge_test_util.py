@@ -1,6 +1,7 @@
 from datetime import datetime
 import json
 import logging
+import time
 import pytest
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
@@ -65,54 +66,27 @@ class BridgeTestUtil:
         self.cleos.logger.info("Create bridge evm to zero request...")
         result = self.bbf.evm_bridge.bridge_e_to_z(e_user, z_user, token, e_amount, fee)
         assert result
-        event = result["event"]
-        #   self.cleos.logger.info(f"receipt: {result['receipt']}")
-        self.cleos.logger.info(f"event: {event}")
-        # assert event was thrown
-        assert event["event"] == "BridgeEVMToZeroRequestQueued"
-        args = event["args"]
-        assert args["bridgeRequestId"] == bridge_request_id, (
-            f"evm to zero request ids does not match {args['bridgeRequestId']} != {bridge_request_id}"
-        )
-        assert args["to"] == self.bbf.local_w3.keccak(text=z_user), (
-            f"to account does not match {args['to']} != {self.bbf.local_w3.keccak(text=z_user)}"
-        )
-        assert args["token"] == token.contract.address, (
-            f"token address does not match {args['token']} != {token.contract.address}"
-        )
-        assert args["sender"] == e_user.address, (
-            f"sender address does not match {args['sender']} != {e_user.address}"
-        )
-        assert args["amount"] == e_amount, (
-            f"amount does not match {args['amount']} != {e_amount}"
-        )
-        self.cleos.logger.info("Validated event")
+        self.cleos.logger.info(f"receipt: {result['receipt']}")
+        expected_event = {
+            'bridgeRequestId': bridge_request_id,
+            'to': z_user,
+            'token': token.contract.address,
+            'sender': e_user.address,
+            'amount': e_amount,
+        }
+        self.assert_bridge_e_to_z_req_queued_event(result["event"], expected_event)
 
+        expected_bridge_request = {
+            'id': bridge_request_id,
+            'token': token.contract.address,
+            'user': e_user.address,
+            'amount': e_amount,
+            'zeroAmount': z_amount,
+            'destinationAccount': z_user,
+            'zeroSymbol': token.z_symbol,
+        }
         # assert bridge request
-        bridge_request = self.bbf.evm_bridge.e_to_z_req_by_id(bridge_request_id)
-        self.cleos.logger.info(f"bridge request: {bridge_request}")
-        assert bridge_request[0] == bridge_request_id, (
-            f"evm to zero request ids does not match {bridge_request[0]} != {bridge_request_id}"
-        )
-        assert bridge_request[1] == token.contract.address, (
-            f"token address does not match {bridge_request[1]} != {token.contract.address}"
-        )
-        assert bridge_request[2] == e_user.address, (
-            f"sender address does not match {bridge_request[2]} != {e_user.address}"
-        )
-        assert bridge_request[3] == e_amount, (
-            f"amount does not match {bridge_request[3]} != {e_amount}"
-        )
-        assert bridge_request[4] == z_amount, (
-            f"zero amount does not match {bridge_request[4]} != {z_amount}"
-        )
-        assert bridge_request[5] == z_user, (
-            f"zero user does not match {bridge_request[5]} != {z_user}"
-        )
-        self.assert_is_recent_date(bridge_request[6])
-        assert bridge_request[7] == token.z_symbol, (
-            f"zero symbol does not match {bridge_request[6]} != {token.z_symbol}"
-        )
+        self.assert_bridge_e_to_z_req(expected_bridge_request)
 
         # assert balances after request creation
         e_user_balance -= e_amount
@@ -155,32 +129,29 @@ class BridgeTestUtil:
         )
         self.assert_stats(token, z_supply), "z supply does not match"
 
-        # assert processed bridge evm to zero request
-        processed_bridge_e_to_z_req = (
-            self.bbf.zero_bridge.get_last_processed_bridge_e_to_z_request()
-        )
-        assert processed_bridge_e_to_z_req["id"] == bridge_request_id - 1, (
-            f"processed bridge evm to zero request id does not match {processed_bridge_e_to_z_req['id']} != {bridge_request_id - 1}"
-        )
-        assert int(processed_bridge_e_to_z_req["call_id"]) == bridge_request_id, (
-            f"processed bridge evm to zero request call id does not match {int(processed_bridge_e_to_z_req['call_id'])} != {bridge_request_id}"
-        )
-        assert processed_bridge_e_to_z_req["state"] == "completed", (
-            f"processed bridge evm to zero request state does not match {processed_bridge_e_to_z_req['state']} != completed"
-        )
-        assert processed_bridge_e_to_z_req["refund_reason"] == "", (
-            f"processed bridge evm to zero request refund reason does not match {processed_bridge_e_to_z_req['refund_reason']} != ''"
-        )
-        self.assert_is_recent_date(processed_bridge_e_to_z_req["timestamp"])
+        expected_processed_bridge_e_to_z_req = {
+            'call_id': bridge_request_id,
+            'state': 'completed',
+            'refund_reason': '',
+        }
+        self.assert_processed_bridge_e_to_z_req(expected_processed_bridge_e_to_z_req)
 
         self.assert_bridge_e_to_zero_req_exists(bridge_request_id)
 
+        time.sleep(2)
+        logs = self.bbf.local_w3.eth.get_logs({
+            'fromBlock': 0,
+            'toBlock': 'latest',
+            'address': self.bbf.bridge_e_contract.address,
+            # 'topics': ['0x0986011152c30f9a78f46871728cf2ad9258eaaaf8dc602cc434d9cc6053909a']
+        })
+        self.cleos.logger.info(f"Event logs {logs}")
         self.cleos.logger.info("Notify processed bridge evm to zero request...")
         result = self.bbf.zero_bridge.notify_processed_e_to_z_reqs(bridge_request_id)
         self.cleos.logger.info(json.dumps(result, indent=4))
         self.assert_bridge_e_to_zero_req_exists(bridge_request_id, exists=False)
         self.assert_processed_bridge_e_to_zero_req_exists(
-            processed_bridge_e_to_z_req["id"]
+            bridge_request_id
         )
         #   Make sure the e user and e bridge balances were not affected as it is not a refund
         assert token.e_balance(e_user.address) == e_user_balance, (
@@ -196,36 +167,231 @@ class BridgeTestUtil:
         result = self.bbf.zero_bridge.remove_processed_e_to_z_reqs(bridge_request_id)
         self.cleos.logger.info(json.dumps(result, indent=4))
         self.assert_processed_bridge_e_to_zero_req_exists(
-            processed_bridge_e_to_z_req["id"], exists=False
+            bridge_request_id, exists=False
         )
+
+    def assert_process_bridge_evm_to_zero_req(
+        self,
+        e_user: LocalAccount,
+        z_user: str,
+        token: Token,
+        z_amount: int,
+    ):
+        tevmc = self.bbf.tevmc
+        local_w3: Web3 = self.bbf.local_w3
+        evm_transaction_signer = self.bbf.evm_transaction_signer
+
+        e_user_balance = token.e_balance(e_user.address)
+        z_user_balance = token.z_balance(z_user)
+        e_bridge_balance = self.bbf.bridge_e_contract.functions.tokenBalances(
+            token.contract.address
+        ).call()
+        z_bridge_eth_balance = local_w3.eth.get_balance(self.bbf.bridge_z_eth_addr)
+        z_supply = token.z_supply()
+        e_amount = token.z_to_e_amount(z_amount)
+        self.cleos.logger.info(
+            f"z user balance: {z_user_balance} z user balance type: {type(z_user_balance)} e user balance: {e_user_balance} bridge balance: {e_bridge_balance} z supply: {z_supply} z supply type: {type(z_supply)} z amount: {z_amount} e amount: {e_amount}"
+        )
+        self.cleos.logger.info("Set allowance to bridge e...")
+        receipt = evm_transaction_signer.transact(
+            token.contract,
+            "approve",
+            e_user.address,
+            self.bbf.bridge_e_contract.address,
+            e_amount,
+        )
+        assert receipt
+
+        bridge_request_id = self.bbf.evm_bridge.e_to_z_next_req_id()
+        fee = self.bbf.evm_bridge.fee()
+        self.cleos.logger.info("Create bridge evm to zero request...")
+        result = self.bbf.evm_bridge.bridge_e_to_z(e_user, z_user, token, e_amount, fee)
+        assert result
+        expected_event = {
+            'bridgeRequestId': bridge_request_id,
+            'to': z_user,
+            'token': token.contract.address,
+            'sender': e_user.address,
+            'amount': e_amount,
+        }
+        self.assert_bridge_e_to_z_req_queued_event(result["event"], expected_event)
+
+        expected_bridge_request = {
+            'id': bridge_request_id,
+            'token': token.contract.address,
+            'user': e_user.address,
+            'amount': e_amount,
+            'zeroAmount': z_amount,
+            'destinationAccount': z_user,
+            'zeroSymbol': token.z_symbol,
+        }
+        # assert bridge request
+        self.assert_bridge_e_to_z_req(expected_bridge_request)
+
+        # assert balances after request creation
+        e_user_balance -= e_amount
+        e_bridge_balance += e_amount
+        z_bridge_eth_balance += fee
+        assert token.e_balance(e_user.address) == e_user_balance, (
+            f"e user balance does not match {token.e_balance(e_user.address)} != {e_user_balance}"
+        )
+        assert (
+            token.e_balance(self.bbf.bridge_e_contract.address) == e_bridge_balance
+        ), (
+            f"e bridge balance does not match {token.e_balance(self.bbf.bridge_e_contract.address)} != {e_bridge_balance}"
+        )
+        assert self.bbf.evm_bridge.token_balance(token) == e_bridge_balance, (
+            f"e bridge tracked token balance does not match {self.bbf.evm_bridge.token_balance(token)} != {e_bridge_balance}"
+        )
+        assert token.z_balance(z_user) == z_user_balance, (
+            f"z user balance does not match {token.z_balance(z_user)} != {z_user_balance}"
+        )
+        assert token.z_supply() == z_supply, (
+            f"z supply does not match {token.z_supply()} != {z_supply}"
+        )
+        assert (
+            local_w3.eth.get_balance(self.bbf.bridge_z_eth_addr) == z_bridge_eth_balance
+        ), (
+            f"z bridge eth balance does not match {local_w3.eth.get_balance(self.bbf.bridge_z_eth_addr)} != {z_bridge_eth_balance}"
+        )
+        self.assert_stats(token, z_supply), "z supply does not match"
+
+        self.cleos.logger.info("Process bridge evm to zero request...")
+        result = self.bbf.zero_bridge.process_e_to_z_reqs(bridge_request_id)
+        self.cleos.logger.info(json.dumps(result, indent=4))
+        z_user_balance.amount += z_amount
+        z_supply.amount += z_amount
+        assert token.z_balance(z_user) == z_user_balance, (
+            f"z user balance does not match {token.z_balance(z_user)} != {z_user_balance}"
+        )
+        assert token.z_supply() == z_supply, (
+            f"z supply does not match {token.z_supply()} != {z_supply}"
+        )
+        self.assert_stats(token, z_supply), "z supply does not match"
+
+        expected_processed_bridge_e_to_z_req = {
+            'call_id': bridge_request_id,
+            'state': 'completed',
+            'refund_reason': '',
+        }
+        self.assert_processed_bridge_e_to_z_req(expected_processed_bridge_e_to_z_req)
+
+        self.assert_bridge_e_to_zero_req_exists(bridge_request_id)
+
+        self.cleos.logger.info("Notify processed bridge evm to zero request...")
+        result = self.bbf.zero_bridge.notify_processed_e_to_z_reqs(bridge_request_id)
+        self.cleos.logger.info(json.dumps(result, indent=4))
+        self.assert_bridge_e_to_zero_req_exists(bridge_request_id, exists=False)
+        self.assert_processed_bridge_e_to_zero_req_exists(
+            bridge_request_id
+        )
+        #   Make sure the e user and e bridge balances were not affected as it is not a refund
+        assert token.e_balance(e_user.address) == e_user_balance, (
+            f"e user balance does not match {token.e_balance(e_user.address)} != {e_user_balance}"
+        )
+        assert (
+            token.e_balance(self.bbf.bridge_e_contract.address) == e_bridge_balance
+        ), (
+            f"e bridge balance does not match {token.e_balance(self.bbf.bridge_e_contract.address)} != {e_bridge_balance}"
+        )
+
+        self.cleos.logger.info("Remove processed bridge evm to zero request...")
+        result = self.bbf.zero_bridge.remove_processed_e_to_z_reqs(bridge_request_id)
+        self.cleos.logger.info(json.dumps(result, indent=4))
+        self.assert_processed_bridge_e_to_zero_req_exists(
+            bridge_request_id, exists=False
+        )
+
+    def assert_bridge_e_to_z_req(self, expected: dict):
+        actual = self.bbf.evm_bridge.e_to_z_req_by_id(expected["id"])
+        self.cleos.logger.info(f"bridge evm to zero request: {actual}")
+        assert actual[0] == expected["id"], (
+            f"evm to zero request ids does not match {actual[0]} != {expected['id']}"
+        )
+        assert actual[1] == expected["token"], (
+            f"token address does not match {actual[1]} != {expected['token']}"
+        )
+        assert actual[2] == expected["user"], (
+            f"sender address does not match {actual[2]} != {expected['user']}"
+        )
+        assert actual[3] == expected["amount"], (
+            f"amount does not match {actual[3]} != {expected['amount']}"
+        )
+        assert actual[4] == expected["zeroAmount"], (
+            f"zero amount does not match {actual[4]} != {expected['zeroAmount']}"
+        )
+        assert actual[5] == expected["destinationAccount"], (
+            f"zero user does not match {actual[5]} != {expected['destinationAccount']}"
+        )
+        self.assert_is_recent_date(actual[6])
+        assert actual[7] == expected["zeroSymbol"], (
+            f"zero symbol does not match {actual[6]} != {expected['zeroSymbol']}"
+        )
+
+    def assert_bridge_e_to_z_req_queued_event(self, actual: dict, expected: dict):
+        self.cleos.logger.info(f"event: {actual}")
+        assert actual["event"] == "BridgeEVMToZeroRequestQueued"
+        args = actual["args"]
+        assert args["bridgeRequestId"] == expected["bridgeRequestId"], (
+            f"evm to zero request ids does not match {args['bridgeRequestId']} != {expected['bridgeRequestId']}"
+        )
+        assert args["to"] == self.bbf.local_w3.keccak(text=expected["to"]), (
+            f"to account does not match {args['to']} != {self.bbf.local_w3.keccak(text=expected['to'])}"
+        )
+        assert args["token"] == expected["token"], (
+            f"token address does not match {args['token']} != {expected['token']}"
+        )
+        assert args["sender"] == expected["sender"], (
+            f"sender address does not match {args['sender']} != {expected['sender']}"
+        )
+        assert args["amount"] == expected["amount"], (
+            f"amount does not match {args['amount']} != {expected['amount']}"
+        )
+    
+    def assert_processed_bridge_e_to_z_req(self, expected: dict):
+    
+        actual = (
+            self.bbf.zero_bridge.get_processed_bridge_e_to_z_request(expected["call_id"])
+        )
+        assert int(actual["call_id"]) == expected["call_id"], (
+            f"processed bridge evm to zero request call id does not match {int(actual['call_id'])} != {expected['call_id']}"
+        )
+        assert actual["state"] == expected["state"], (
+            f"processed bridge evm to zero request state does not match {actual['state']} != {expected['state']}"
+        )
+        assert actual["refund_reason"] == expected["refund_reason"], (
+            f"processed bridge evm to zero request refund reason does not match {actual['refund_reason']} != {expected['refund_reason']}"
+        )
+        self.assert_is_recent_date(actual["timestamp"])
 
     def assert_bridge_e_to_zero_req_exists(
         self, bridge_request_id: int, exists: bool = True
     ):
         try:
             self.bbf.evm_bridge.e_to_z_req_by_id(bridge_request_id)
-            assert exists, (
-                f"bridge evm to zero request with id {bridge_request_id} exists"
-            )
         except Exception as e:
             self.cleos.logger.info(
-                f"Bridge evm to zero request not found error:{e}\n--"
+                f"Bridge evm to zero request not found error:{e}\n"
             )
             assert not exists, (
                 f"bridge evm to zero request with id {bridge_request_id} does not exist"
             )
+            return
+        assert exists, (
+            f"bridge evm to zero request with id {bridge_request_id} exists"
+        )
 
     def assert_processed_bridge_e_to_zero_req_exists(
-        self, id: int, exists: bool = True
+        self, call_id: int, exists: bool = True
     ):
-        request = self.bbf.zero_bridge.get_processed_bridge_e_to_z_request(id)
+        request = self.bbf.zero_bridge.get_processed_bridge_e_to_z_request(call_id)
         if exists:
             assert request is not None, (
-                f"processed bridge evm to zero request with id {id} does not exist"
+                f"processed bridge evm to zero request with call_id {call_id} does not exist"
             )
         else:
             assert request is None, (
-                f"processed bridge evm to zero request with id {id} exists"
+                f"processed bridge evm to zero request with call_id {call_id} exists"
             )
 
     def assert_bridge_zero_to_evm(
