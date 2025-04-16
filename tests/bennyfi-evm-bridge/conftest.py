@@ -63,6 +63,7 @@ class BenyBridgeFixture:
             Token(self, "mtb", "MTB", "WMTB", 7, 4, 4, 100),
             Token(self, "mtc", "MTC", "MTC", 4, 3, 1, 100),
         ]
+        self.token_map = {t.name: t for t in self.tokens}
         self.bridge_z_admin = "bridgezadmin"
         self.cleos.create_account_staked("eosio", self.bridge_z_admin)
         tevmc.cleos.push_action("eosio.evm", "setrevision", [2], "eosio.evm")
