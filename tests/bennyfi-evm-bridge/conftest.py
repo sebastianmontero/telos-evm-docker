@@ -32,6 +32,8 @@ from util.evm_transaction_signer import EVMTransactionSigner
 from util.token import Token
 from util.zero_bridge import ZeroBridge
 from util.evm_bridge import EVMBridge
+from util.token_registry import TokenRegistry
+from util.yield_source_registry import YieldSourceRegistry
 
 DEFAULT_GAS_PRICE = 524799638144
 DEFAULT_GAS = 991000
@@ -57,7 +59,6 @@ class BenyBridgeFixture:
         self.evm_transaction_signer.add_account(tevmc.cleos.evm_default_account)
         self.util_z = UtilZero(self.cleos)
         self.zero_bridge = ZeroBridge(self)
-        self.evm_bridge = EVMBridge(self)
         self.tokens = [
             Token(self, "mta", "MTA", "MTA", 8, 6, 50, 100),
             Token(self, "mtb", "MTB", "WMTB", 7, 4, 4, 100),
@@ -75,11 +76,14 @@ class BenyBridgeFixture:
         )
         assert self.local_w3.is_connected()
         self.__deploy_contracts()
+        self.evm_bridge = EVMBridge(self, self.bridge_e_contract)
+        self.token_registry = TokenRegistry(self, self.token_registry_contract)
+        self.yield_source_registry = YieldSourceRegistry(self, self.yield_source_registry_contract) 
         self.z_accounts = self.__create_zero_accounts(5)
         self.e_accounts = self.__create_evm_accounts(5)
         self.__fund_evm_accounts_with_tlos(self.e_accounts)
         self.__fund_evm_accounts_with_tokens(self.tokens, self.e_accounts)
-        self.__register_tokens(self.tokens)
+        self.token_registry.register_tokens(self.tokens)
         self.__register_yield_sources(self.tokens)
 
     def __deploy_contracts(self):
@@ -268,55 +272,8 @@ class BenyBridgeFixture:
         assert token_contract.functions.decimals().call() == decimals
         return token_contract
 
-    def __register_tokens(self, tokens: list[Token]):
-        for token in tokens:
-            self.__register_token(
-                token.contract.address,
-                token.z_symbol,
-                token.z_decimals,
-                token.min_amount,
-            )
-
-    def __register_token(
-        self,
-        token_contract_address: ChecksumAddress,
-        z_symbol: str,
-        z_decimals: int,
-        min_amount: int,
-    ):
-        self.cleos.logger.info(
-            f"Registering Token: {token_contract_address} {z_symbol} {z_decimals} {min_amount}"
-        )
-        receipt = self.evm_transaction_signer.transact(
-            self.token_registry_contract,
-            "registerToken",
-            self.cleos.evm_default_account.address,
-            token_contract_address,
-            z_symbol,
-            z_decimals,
-            min_amount,
-            True,
-        )
-        assert receipt
-
     def __register_yield_sources(self, tokens: list[Token]):
         for token in tokens:
-            self.__register_yield_source(
+            self.yield_source_registry.register_yield_source(
                 token.yield_source_name(), self.mock_yield_source_adaptor.address
             )
-
-    def __register_yield_source(
-        self, name: str, adaptor_contract_address: ChecksumAddress
-    ):
-        self.cleos.logger.info(
-            f"Registering yield source: {name} {adaptor_contract_address}"
-        )
-        receipt = self.evm_transaction_signer.transact(
-            self.yield_source_registry_contract,
-            "setYieldSource",
-            self.cleos.evm_default_account.address,
-            name,
-            adaptor_contract_address,
-            True,
-        )
-        assert receipt

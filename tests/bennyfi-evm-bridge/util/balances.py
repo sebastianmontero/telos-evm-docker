@@ -36,7 +36,7 @@ class Balances:
 
     def update_evm_balance(self, owner: LocalAccount, token: Token, amount: int):
       assert token.name in self.evm, f"No evm balance for token: {token.name}"
-      assert owner in self.evm[token.name], f"No evm balance for user: {owner} and token: {token.name}"
+      assert owner.address in self.evm[token.name], f"No evm balance for user: {owner.address} and token: {token.name}"
       self.evm[token.name][owner.address] += amount
 
     def update_supply(self, token: Token, amount: int):

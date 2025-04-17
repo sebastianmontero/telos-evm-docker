@@ -6,6 +6,7 @@ class ZeroBridge:
     def __init__(self, bbf):
         self.bbf = bbf
         self.cleos: CLEOSEVM = bbf.cleos
+        self.call_counter = 0
 
     def set_config(
         self,
@@ -49,17 +50,17 @@ class ZeroBridge:
             ],
         )
 
-    def process_e_to_z_reqs(self, counter: int) -> dict:
+    def process_e_to_z_reqs(self) -> dict:
         # TODO: ADD equivalent to open permissions account
-        return self.__action("prevmtozreqs", "eosio", [counter])
+        return self.__action("prevmtozreqs", "eosio", [self.call_counter])
 
-    def notify_processed_e_to_z_reqs(self, counter: int) -> dict:
+    def notify_processed_e_to_z_reqs(self) -> dict:
         # TODO: ADD equivalent to open permissions account
-        return self.__action("ntpretozreqs", "eosio", [counter])
+        return self.__action("ntpretozreqs", "eosio", [self.call_counter])
 
-    def remove_processed_e_to_z_reqs(self, counter: int) -> dict:
+    def remove_processed_e_to_z_reqs(self) -> dict:
         # TODO: ADD equivalent to open permissions account
-        return self.__action("rmpretozreqs", "eosio", [counter])
+        return self.__action("rmpretozreqs", "eosio", [self.call_counter])
 
     def stake(
         self,
@@ -110,6 +111,17 @@ class ZeroBridge:
             "procetozreqs", key_type="i64", index="1", lower_bound=call_id, upper_bound=call_id
         )
         return results[0] if len(results) > 0 else None
+    
+    def get_processed_bridge_e_to_z_requests(self) -> list[dict]:
+        results = self.__table(
+            "procetozreqs",
+            limit=1000
+        )
+        return results
+
+    def get_processed_bridge_e_to_z_requests_map(self) -> dict:
+        results = self.get_processed_bridge_e_to_z_requests()
+        return {r["call_id"]: r for r in results}
 
     def get_last_bridge_z_to_e_request(self) -> dict | None:
         results = self.__table(
@@ -160,6 +172,7 @@ class ZeroBridge:
         return results[0] if len(results) > 0 else None
 
     def __action(self, action: str, actor: str, data: list) -> dict:
+        self.call_counter += 1
         return self.cleos.push_action(
             self.bbf.bridge_z_account,
             action,

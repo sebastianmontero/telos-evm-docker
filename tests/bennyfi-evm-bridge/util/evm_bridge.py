@@ -1,18 +1,16 @@
 import time
 from eth_account.signers.local import LocalAccount
 from util.token import Token
+from util.evm_contract import EVMContract
 
 
-class EVMBridge:
-    def __init__(self, bbf):
-        self.bbf = bbf
+class EVMBridge(EVMContract):
 
     def fee(self) -> int:
-        return self.bbf.bridge_e_contract.functions.fee().call()
+        return self.functions.fee().call()
 
     def set_fee(self, fee: int):
-        return self.bbf.evm_transaction_signer.transact(
-            self.bbf.bridge_e_contract,
+        return self.transact(
             "setFee",
             self.bbf.cleos.evm_default_account.address,
             fee,
@@ -20,16 +18,23 @@ class EVMBridge:
 
     def e_to_z_next_req_id(self) -> int:
         return (
-            self.bbf.bridge_e_contract.functions.nextBridgeEVMToZeroRequestId().call()
+            self.functions.nextBridgeEVMToZeroRequestId().call()
         )
 
-    def e_to_z_req_by_id(self, req_id: int) -> dict:
-        return self.bbf.bridge_e_contract.functions.getBridgeEVMToZeroRequestById(
-            req_id
-        ).call()
+    def e_to_z_req_by_id(self, req_id: int) -> dict | None:
+        try:
+            return self.functions.getBridgeEVMToZeroRequestById(
+                req_id
+            ).call()
+        except Exception as e:
+            self.logger.info(
+                f"Bridge evm to zero request not found error:{e}\n"
+            )
+            return None
+        
 
     def token_balance(self, token: Token) -> int:
-        return self.bbf.bridge_e_contract.functions.tokenBalances(
+        return self.functions.tokenBalances(
             token.contract.address
         ).call()
 
@@ -42,8 +47,7 @@ class EVMBridge:
         fee: int = None,
     ) -> dict:
         fee = fee if fee else self.fee()
-        receipt = self.bbf.evm_transaction_signer.transact(
-            self.bbf.bridge_e_contract,
+        receipt = self.transact(
             "bridgeEVMToZero",
             {
                 "from": e_user.address,
@@ -53,17 +57,8 @@ class EVMBridge:
             token.contract.address,
             e_amount,
         )
-        events = self.bbf.bridge_e_contract.events.BridgeEVMToZeroRequestQueued().process_receipt(
+        events = self.events.BridgeEVMToZeroRequestQueued().process_receipt(
             receipt
         )
         return {"receipt": receipt, "event": events[0]}
-    
 
-    def get_events(self, event_name: str, count: int) -> list:
-        time.sleep(1)
-        events = self.bbf.bridge_e_contract.events[event_name]().get_logs(
-            fromBlock=0,
-            toBlock='latest',
-        )
-        assert len(events) >= count, f"Expected at least {count} events, got {len(events)}"
-        return events[-count:]

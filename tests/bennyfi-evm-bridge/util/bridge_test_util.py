@@ -25,7 +25,14 @@ from util.evm_transaction_signer import EVMTransactionSigner
 from util.token import Token
 from util.token_test_util import TokenTestUtil
 from util.balances import Balances
+from enum import Enum
 
+
+class BridgeEVMToZeroStage(Enum):
+    REQUEST_CREATED = 1
+    REQUEST_PROCESSED = 2
+    PROCESSED_REQUEST_NOTIFIED = 3
+    REQUEST_COMPLETED = 4
 
 class BridgeTestUtil:
     def __init__(self, bbf) -> None:
@@ -38,6 +45,7 @@ class BridgeTestUtil:
         z_user: str,
         token: Token,
         z_amount: int,
+        stage: BridgeEVMToZeroStage = BridgeEVMToZeroStage.REQUEST_COMPLETED,
     ):
         tevmc = self.bbf.tevmc
         local_w3: Web3 = self.bbf.local_w3
@@ -119,6 +127,9 @@ class BridgeTestUtil:
         )
         TokenTestUtil.assert_stats(token, z_supply, self.bbf.bridge_z_account)
 
+        if stage == BridgeEVMToZeroStage.REQUEST_CREATED:
+            return expected_bridge_request
+
         requests = [
                 {
                     "request": expected_bridge_request,
@@ -126,34 +137,42 @@ class BridgeTestUtil:
                 }
             ]
         self.assert_process_bridge_evm_to_zero_reqs(requests)
+
+        if stage == BridgeEVMToZeroStage.REQUEST_PROCESSED:
+            return expected_bridge_request
         
         self.assert_notify_processed_bridge_evm_to_zero_reqs(requests)
 
-        self.cleos.logger.info("Remove processed bridge evm to zero request...")
-        result = self.bbf.zero_bridge.remove_processed_e_to_z_reqs(bridge_request_id)
-        self.cleos.logger.info(json.dumps(result, indent=4))
-        self.assert_processed_bridge_e_to_zero_req_exists(
-            bridge_request_id, exists=False
-        )
+        if stage == BridgeEVMToZeroStage.PROCESSED_REQUEST_NOTIFIED:
+            return expected_bridge_request
+
+        self.assert_remove_processed_bridge_evm_to_zero_reqs(requests)
+
+        return expected_bridge_request
 
     def assert_process_bridge_evm_to_zero_reqs(
         self,
         requests: list[dict],
+        check_already_processed: bool = False
     ):    
         self.cleos.logger.info("Process bridge evm to zero requests...")
+        already_processed = {}
+        if check_already_processed:
+            already_processed = self.bbf.zero_bridge.get_processed_bridge_e_to_z_requests_map()
         balances = Balances(self.bbf)
         reqs = [request["request"] for request in requests]
         balances.load_balances(reqs, "to", "from")
-        result = self.bbf.zero_bridge.process_e_to_z_reqs(requests[0]["request"]["id"])
+        result = self.bbf.zero_bridge.process_e_to_z_reqs()
         self.cleos.logger.info(json.dumps(result, indent=4))
 
         # Update expected balances and supplies, assert requests
         for request in requests:
             bridge_req = request["request"]
             token = bridge_req["token"]
-            if request["refund_reason"] == "":
+            if request["refund_reason"] == "" and bridge_req["id"] not in already_processed:
                 balances.update_zero_balance(bridge_req["to"], token, bridge_req["zeroAmount"])
                 balances.update_supply(token, bridge_req["zeroAmount"])
+
             expected_processed_req = {
                 'call_id': bridge_req["id"],
                 'state': 'completed' if request["refund_reason"] == "" else 'mustrefund',
@@ -175,7 +194,7 @@ class BridgeTestUtil:
         balances.load_balances(reqs, "to", "from")
         balances.add_evm_balances(self.bbf.bridge_e_contract)
 
-        result = self.bbf.zero_bridge.notify_processed_e_to_z_reqs(requests[0]["request"]["id"])
+        result = self.bbf.zero_bridge.notify_processed_e_to_z_reqs()
         self.cleos.logger.info(json.dumps(result, indent=4))
 
         completed_events = []
@@ -206,8 +225,27 @@ class BridgeTestUtil:
         self.assert_bridge_e_to_z_req_completed_events(completed_events)
         self.assert_bridge_e_to_z_refund_completed_events(refunded_events)
 
+    def assert_remove_processed_bridge_evm_to_zero_reqs(
+        self,
+        requests: list[dict],
+        check_notified: bool = False
+    ):    
+        self.cleos.logger.info("Remove processed bridge evm to zero request...")
+        result = self.bbf.zero_bridge.remove_processed_e_to_z_reqs()
+        self.cleos.logger.info(json.dumps(result, indent=4))
+
+        exists = False
+        for request in requests:
+            id = request["request"]["id"]
+            if check_notified and self.bbf.evm_bridge.e_to_z_req_by_id(id):
+                exists = True
+            self.assert_processed_bridge_e_to_zero_req_exists(
+                id, exists
+            )
+
     def assert_bridge_e_to_z_req(self, expected: dict):
         actual = self.bbf.evm_bridge.e_to_z_req_by_id(expected["id"])
+        assert actual is not None, f"bridge evm to zero request with id {expected['id']} does not exist"
         self.cleos.logger.info(f"bridge evm to zero request: {actual}")
         assert actual[0] == expected["id"], (
             f"evm to zero request ids does not match {actual[0]} != {expected['id']}"
@@ -233,18 +271,17 @@ class BridgeTestUtil:
         )
     
 
-    
 
     def assert_bridge_e_to_z_req_queued_event(self, actual: dict, expected: dict):
         self.assert_bridge_e_to_z_req_base_event(actual, expected, "BridgeEVMToZeroRequestQueued")
 
     def assert_bridge_e_to_z_req_completed_events(self, expected_events: list[dict]):
-        self.assert_events(self, expected_events, "BridgeEVMToZeroRequestCompleted", self.assert_bridge_e_to_z_req_completed_event)
+        self.assert_events(expected_events, "BridgeEVMToZeroRequestCompleted", self.assert_bridge_e_to_z_req_completed_event)
     
     def assert_events(self, expected_events: list[dict], event_name: str, assert_method: Callable[[dict, dict], None]):
-        if expected_events.__len__ == 0:
+        if len(expected_events) == 0:
             return
-        actual_events = self.bbf.evm_bridge.get_events(event_name, expected_events.__len__)
+        actual_events = self.bbf.evm_bridge.get_events(event_name, len(expected_events))
         for actual, expected in zip(actual_events, expected_events):
             assert_method(actual, expected)
 
@@ -304,19 +341,15 @@ class BridgeTestUtil:
     def assert_bridge_e_to_zero_req_exists(
         self, bridge_request_id: int, exists: bool = True
     ):
-        try:
-            self.bbf.evm_bridge.e_to_z_req_by_id(bridge_request_id)
-        except Exception as e:
-            self.cleos.logger.info(
-                f"Bridge evm to zero request not found error:{e}\n"
-            )
-            assert not exists, (
+        request = self.bbf.evm_bridge.e_to_z_req_by_id(bridge_request_id)
+        if exists:
+            assert request is not None, (
                 f"bridge evm to zero request with id {bridge_request_id} does not exist"
             )
-            return
-        assert exists, (
-            f"bridge evm to zero request with id {bridge_request_id} exists"
-        )
+        else:
+            assert request is None, (
+                f"bridge evm to zero request with id {bridge_request_id} exists"
+            )
 
     def assert_processed_bridge_e_to_zero_req_exists(
         self, call_id: int, exists: bool = True

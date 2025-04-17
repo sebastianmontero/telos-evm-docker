@@ -87,7 +87,7 @@ def test_all(benybridge):
     assert "missing required authority of contract or admin" in repr(e.value)
 
     tevmc.cleos.logger.info(
-        "setconfig: Should fail for non existant stake local account"
+        "setconfig: Should fail for non existent stake local account"
     )
     with pytest.raises(Exception) as e:
         zero_bridge.set_config(
@@ -298,13 +298,7 @@ def test_all(benybridge):
 
     tevmc.cleos.logger.info("bridgeztoevm: Should fail for non active token")
 
-    bbf.evm_transaction_signer.transact(
-        bbf.token_registry_contract,
-        "setTokenActiveStatus",
-        bbf.cleos.evm_default_account.address,
-        bbf.tokens[2].contract.address,
-        False,
-    )
+    bbf.token_registry.set_active_status(bbf.tokens[2].contract.address, False)
     with pytest.raises(Exception) as e:
         zero_bridge.bridge_z_to_e(z_user, e_user.address, bbf.tokens[2].to_asset(10))
     assert "Token is not active" in repr(e.value)
