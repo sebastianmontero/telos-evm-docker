@@ -202,13 +202,165 @@ def test_all(benybridge):
     tevmc.cleos.logger.info(
         "Calling remove processed requests when they haven't been notified should be a no-op"
     )
-    test_util.assert_remove_processed_bridge_evm_to_zero_reqs(requests)
+    test_util.assert_remove_processed_bridge_evm_to_zero_reqs(requests, check_notified=True)
     
     test_util.assert_notify_processed_bridge_evm_to_zero_reqs(requests)
 
     tevmc.cleos.logger.info(
         "Calling notify processed requests when they have already been notified should be a no-op"
     )
-    test_util.assert_notify_processed_bridge_evm_to_zero_reqs(requests)
+    test_util.assert_notify_processed_bridge_evm_to_zero_reqs(requests, check_notified=True)
     test_util.assert_remove_processed_bridge_evm_to_zero_reqs(requests)
+
+    requests = []
+    tevmc.cleos.logger.info(
+        "TEST BATCH SIZE IS RESPECTED"
+    )
+
+    tevmc.cleos.logger.info(
+        "Creating 5 requests"
+    )
+
+    for i in range(5):
+        request = test_util.assert_bridge_evm_to_zero(
+            bbf.e_accounts[1],
+            bbf.z_accounts[2],
+            bbf.tokens[0],
+            947348,
+            BridgeEVMToZeroStage.REQUEST_CREATED
+        )
+        requests.append({
+            "request": request,
+            "refund_reason": ""
+        })
+
+    bbf.zero_bridge.update_config(batch_size=1)
+
+    tevmc.cleos.logger.info(
+        "Calling process requests with a batch size of 1 should process 1 request at a time"
+    )
+
+    test_util.assert_process_bridge_evm_to_zero_reqs(requests[:1])
+
+    assert bbf.zero_bridge.get_processed_bridge_e_to_z_request_count() == 1, f"Expected 1 processed request, got {bbf.zero_bridge.get_processed_bridge_e_to_z_request_count()}"
+
+    tevmc.cleos.logger.info(
+        "Calling process requests again with the same batch size should be a no-op"
+    )
+
+    test_util.assert_process_bridge_evm_to_zero_reqs(requests[:1], check_already_processed=True)
+
+    assert bbf.zero_bridge.get_processed_bridge_e_to_z_request_count() == 1, f"Expected 1 processed request, got {bbf.zero_bridge.get_processed_bridge_e_to_z_request_count()}"
+
+    bbf.zero_bridge.update_config(batch_size=2)
+
+    tevmc.cleos.logger.info(
+        "Calling process requests with a batch size of 2 should process one more request"
+    )
+
+    test_util.assert_process_bridge_evm_to_zero_reqs(requests[:2], check_already_processed=True)
+
+    assert bbf.zero_bridge.get_processed_bridge_e_to_z_request_count() == 2, f"Expected 2 processed request, got {bbf.zero_bridge.get_processed_bridge_e_to_z_request_count()}"
+
+    # setting version to avoid duplicate transaction error
+    bbf.zero_bridge.update_config(batch_size=1, version="v2") 
+
+    tevmc.cleos.logger.info(
+        "Calling notify processed requests with a batch size of 1 should notify 1 request at a time"
+    )
+
+    test_util.assert_notify_processed_bridge_evm_to_zero_reqs(requests[:1])
+
+    test_util.assert_bridge_e_to_zero_req_exists(requests[0]["request"]["id"], exists=False)
+    test_util.assert_bridge_e_to_zero_req_exists(requests[1]["request"]["id"], exists=True)
+
+    tevmc.cleos.logger.info(
+        "Calling notify processed requests again with a batch size of 1 should be a no-op"
+    )
+
+    test_util.assert_notify_processed_bridge_evm_to_zero_reqs(requests[:1], check_notified=True)
+
+    test_util.assert_bridge_e_to_zero_req_exists(requests[1]["request"]["id"], exists=True)
+
+    bbf.zero_bridge.update_config(batch_size=10)
+
+    tevmc.cleos.logger.info(
+        "Calling remove processed requests should only remove one request, as only one has been notified, batch size should not matter"
+    ) 
+
+    test_util.assert_remove_processed_bridge_evm_to_zero_reqs(requests[:1])
+
+    assert bbf.zero_bridge.get_processed_bridge_e_to_z_request_count() == 1, f"Expected 1 processed request, got {bbf.zero_bridge.get_processed_bridge_e_to_z_request_count()}"
+
+    bbf.zero_bridge.update_config(batch_size=3, version="v3")
+
+    tevmc.cleos.logger.info(
+        "Calling process requests with a batch size of 3 should process 2 more requests"
+    )
+
+    # Remove first request as it has already been processed and removed
+    requests = requests[1:]
+    test_util.assert_process_bridge_evm_to_zero_reqs(requests[:3], check_already_processed=True)
+
+    assert bbf.zero_bridge.get_processed_bridge_e_to_z_request_count() == 3, f"Expected 3 processed requests, got {bbf.zero_bridge.get_processed_bridge_e_to_z_request_count()}"
+
+    bbf.zero_bridge.update_config(batch_size=4)
+
+    tevmc.cleos.logger.info(
+        "Calling process requests with a batch size of 4 should process 1 more requests"
+    )
+
+    test_util.assert_process_bridge_evm_to_zero_reqs(requests, check_already_processed=True)
+
+    assert bbf.zero_bridge.get_processed_bridge_e_to_z_request_count() == 4, f"Expected 4 processed requests, got {bbf.zero_bridge.get_processed_bridge_e_to_z_request_count()}"
+    
+    bbf.zero_bridge.update_config(batch_size=3, version="v4")
+    
+    tevmc.cleos.logger.info(
+        "Calling notify processed requests with a batch size of 3 should notify 2 more requests"
+    )
+
+    test_util.assert_notify_processed_bridge_evm_to_zero_reqs(requests[:3], check_notified=True)
+
+    test_util.assert_bridge_e_to_zero_req_exists(requests[1]["request"]["id"], exists=False)
+    test_util.assert_bridge_e_to_zero_req_exists(requests[2]["request"]["id"], exists=False)
+    test_util.assert_bridge_e_to_zero_req_exists(requests[3]["request"]["id"], exists=True)
+
+    bbf.zero_bridge.update_config(batch_size=4, version="v5")
+
+    tevmc.cleos.logger.info(
+        "Calling notify processed requests with a batch size of 4 should notify 1 more requests"
+    )
+
+    test_util.assert_notify_processed_bridge_evm_to_zero_reqs(requests, check_notified=True)
+    test_util.assert_bridge_e_to_zero_req_exists(requests[3]["request"]["id"], exists=False)
+
+    bbf.zero_bridge.update_config(batch_size=1, version="v7")
+
+    tevmc.cleos.logger.info(
+        "Calling remove processed requests with a batch size of 1 should remove 1 request"
+    )
+
+    test_util.assert_remove_processed_bridge_evm_to_zero_reqs(requests[:1], check_notified=True)
+    assert bbf.zero_bridge.get_processed_bridge_e_to_z_request_count() == 3, f"Expected 3 processed requests, got {bbf.zero_bridge.get_processed_bridge_e_to_z_request_count()}"
+
+    requests = requests[1:]
+    bbf.zero_bridge.update_config(batch_size=2, version="v7")
+
+    tevmc.cleos.logger.info(
+        "Calling remove processed requests with a batch size of 2 should remove 2 request"
+    )
+
+    test_util.assert_remove_processed_bridge_evm_to_zero_reqs(requests[:2], check_notified=True)
+    assert bbf.zero_bridge.get_processed_bridge_e_to_z_request_count() == 1, f"Expected 1 processed requests, got {bbf.zero_bridge.get_processed_bridge_e_to_z_request_count()}"
+
+    requests = requests[2:]
+    tevmc.cleos.logger.info(
+        "Calling remove processed requests again should delete all remaining requests"
+    )
+
+    test_util.assert_remove_processed_bridge_evm_to_zero_reqs(requests, check_notified=True)
+    assert bbf.zero_bridge.get_processed_bridge_e_to_z_request_count() == 0, f"Expected 0 processed requests, got {bbf.zero_bridge.get_processed_bridge_e_to_z_request_count()}"
+
+
 

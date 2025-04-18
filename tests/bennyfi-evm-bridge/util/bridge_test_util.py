@@ -165,6 +165,7 @@ class BridgeTestUtil:
         result = self.bbf.zero_bridge.process_e_to_z_reqs()
         self.cleos.logger.info(json.dumps(result, indent=4))
 
+        
         # Update expected balances and supplies, assert requests
         for request in requests:
             bridge_req = request["request"]
@@ -186,6 +187,7 @@ class BridgeTestUtil:
     def assert_notify_processed_bridge_evm_to_zero_reqs(
         self,
         requests: list[dict],
+        check_notified: bool = False
     ):
         self.cleos.logger.info("Notify processed bridge evm to zero request...")
 
@@ -193,6 +195,12 @@ class BridgeTestUtil:
         reqs = [request["request"] for request in requests]
         balances.load_balances(reqs, "to", "from")
         balances.add_evm_balances(self.bbf.bridge_e_contract)
+
+        already_notified = {}
+        if check_notified:
+            for request in requests:
+                if not self.bbf.evm_bridge.e_to_z_req_by_id(request["request"]["id"]):
+                    already_notified[request["request"]["id"]] = True
 
         result = self.bbf.zero_bridge.notify_processed_e_to_z_reqs()
         self.cleos.logger.info(json.dumps(result, indent=4))
@@ -202,23 +210,25 @@ class BridgeTestUtil:
         for request in requests:
             bridge_req = request["request"]
             token = bridge_req["token"]
+            id = bridge_req["id"]
             expected_event = {
-                'bridgeRequestId': bridge_req["id"],
+                'bridgeRequestId': id,
                 'to': bridge_req["to"],
                 'token': token.contract.address,
                 'from': bridge_req["from"].address,
                 'amount': bridge_req["amount"],
             }
-            if request["refund_reason"] != "":
-                balances.update_evm_balance(bridge_req["from"], token, bridge_req["amount"])
-                balances.update_evm_balance(self.bbf.bridge_e_contract, token, -1 * bridge_req["amount"])
-                expected_event['reason'] = request["refund_reason"]
-                refunded_events.append(expected_event)
-            else:
-                completed_events.append(expected_event)
-            self.assert_bridge_e_to_zero_req_exists(bridge_req["id"], exists=False)
+            if id not in already_notified:
+                if request["refund_reason"] != "":
+                    balances.update_evm_balance(bridge_req["from"], token, bridge_req["amount"])
+                    balances.update_evm_balance(self.bbf.bridge_e_contract, token, -1 * bridge_req["amount"])
+                    expected_event['reason'] = request["refund_reason"]
+                    refunded_events.append(expected_event)
+                else:
+                    completed_events.append(expected_event)
+            self.assert_bridge_e_to_zero_req_exists(id, exists=False)
             self.assert_processed_bridge_e_to_zero_req_exists(
-                bridge_req["id"]
+                id
             )
 
         balances.assert_balances()
@@ -326,6 +336,9 @@ class BridgeTestUtil:
     
         actual = (
             self.bbf.zero_bridge.get_processed_bridge_e_to_z_request(expected["call_id"])
+        )
+        assert actual is not None, (
+            f"processed bridge evm to zero request with call id {expected['call_id']} does not exist"
         )
         assert int(actual["call_id"]) == expected["call_id"], (
             f"processed bridge evm to zero request call id does not match {int(actual['call_id'])} != {expected['call_id']}"

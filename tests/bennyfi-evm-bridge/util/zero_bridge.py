@@ -6,6 +6,7 @@ class ZeroBridge:
     def __init__(self, bbf):
         self.bbf = bbf
         self.cleos: CLEOSEVM = bbf.cleos
+        self.logger = bbf.cleos.logger
         self.call_counter = 0
 
     def set_config(
@@ -21,12 +22,19 @@ class ZeroBridge:
         actor: str = None,
     ) -> dict:
         actor = self.bbf.bridge_z_account if actor is None else actor
+        self.logger.info(
+            f"Set config: bridge_e_address: {bridge_e_address}, token_registry_address: {token_registry_address}, stake_local_account: {stake_local_account}, refund_delay_period_mins: {refund_delay_period_mins}, batch_size: {batch_size}, version: {version}, admin: {admin}, active: {active}, actor: {actor}"
+        )
+        if bridge_e_address.startswith('0x'):
+            bridge_e_address = bridge_e_address[2:]
+        if token_registry_address.startswith('0x'):
+            token_registry_address = token_registry_address[2:]
         return self.__action(
             "setconfig",
             actor,
             [
-                bridge_e_address[2:],
-                token_registry_address[2:],
+                bridge_e_address,
+                token_registry_address,
                 stake_local_account,
                 refund_delay_period_mins,
                 batch_size,
@@ -34,6 +42,35 @@ class ZeroBridge:
                 admin,
                 active,
             ],
+        )
+    
+    def update_config(
+        self,
+        bridge_e_address: str | None = None,
+        token_registry_address: str | None = None,
+        stake_local_account: str | None = None,
+        refund_delay_period_mins: int | None = None,
+        batch_size: int | None = None,
+        version: str | None = None,
+        admin: str | None = None,
+        active: bool | None = None,
+        actor: str | None = None,
+    ) -> dict:
+        config = self.get_config()
+        if not config:
+            raise Exception("Config must already exist to update it")
+        
+        self.logger.info(f"Updating config: {config}")
+        return self.set_config(
+                bridge_e_address or config["evm_bridge_address"],
+                token_registry_address or config["evm_token_registry_address"],
+                stake_local_account or config["stake_local_contract"],
+                refund_delay_period_mins or int(config["refund_delay_period"]["_count"] / 60_000_000),
+                batch_size or config["batch_size"],
+                version or config["version"],
+                admin or config["admin"],
+                active if active is not None else config["active"],
+                actor
         )
 
     def bridge_z_to_e(
@@ -118,6 +155,10 @@ class ZeroBridge:
             limit=1000
         )
         return results
+    
+    def get_processed_bridge_e_to_z_request_count(self) -> int:
+        results = self.get_processed_bridge_e_to_z_requests()
+        return len(results)
 
     def get_processed_bridge_e_to_z_requests_map(self) -> dict:
         results = self.get_processed_bridge_e_to_z_requests()
