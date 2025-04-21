@@ -1,5 +1,6 @@
 from tevmc.cleos_evm import CLEOSEVM
 from leap.protocol import Asset
+from util.util_zero import UtilZero
 
 
 class ZeroBridge:
@@ -14,7 +15,8 @@ class ZeroBridge:
         bridge_e_address: str,
         token_registry_address: str,
         stake_local_account: str,
-        refund_delay_period_mins: int,
+        refund_delay_period_secs: int,
+        renotify_period_secs: int,
         batch_size: int,
         version: str,
         admin: str,
@@ -23,7 +25,7 @@ class ZeroBridge:
     ) -> dict:
         actor = self.bbf.bridge_z_account if actor is None else actor
         self.logger.info(
-            f"Set config: bridge_e_address: {bridge_e_address}, token_registry_address: {token_registry_address}, stake_local_account: {stake_local_account}, refund_delay_period_mins: {refund_delay_period_mins}, batch_size: {batch_size}, version: {version}, admin: {admin}, active: {active}, actor: {actor}"
+            f"Set config: bridge_e_address: {bridge_e_address}, token_registry_address: {token_registry_address}, stake_local_account: {stake_local_account}, refund_delay_period_secs: {refund_delay_period_secs}, batch_size: {batch_size}, version: {version}, admin: {admin}, active: {active}, actor: {actor}"
         )
         if bridge_e_address.startswith('0x'):
             bridge_e_address = bridge_e_address[2:]
@@ -36,7 +38,8 @@ class ZeroBridge:
                 bridge_e_address,
                 token_registry_address,
                 stake_local_account,
-                refund_delay_period_mins,
+                refund_delay_period_secs,
+                renotify_period_secs,
                 batch_size,
                 version,
                 admin,
@@ -49,7 +52,8 @@ class ZeroBridge:
         bridge_e_address: str | None = None,
         token_registry_address: str | None = None,
         stake_local_account: str | None = None,
-        refund_delay_period_mins: int | None = None,
+        refund_delay_period_secs: int | None = None,
+        renotify_period_secs: int | None = None,
         batch_size: int | None = None,
         version: str | None = None,
         admin: str | None = None,
@@ -65,7 +69,8 @@ class ZeroBridge:
                 bridge_e_address or config["evm_bridge_address"],
                 token_registry_address or config["evm_token_registry_address"],
                 stake_local_account or config["stake_local_contract"],
-                refund_delay_period_mins or int(config["refund_delay_period"]["_count"] / 60_000_000),
+                refund_delay_period_secs or UtilZero.microseconds_to_seconds(config["refund_delay_period"]),
+                renotify_period_secs or UtilZero.microseconds_to_seconds(config["renotify_period"]),
                 batch_size or config["batch_size"],
                 version or config["version"],
                 admin or config["admin"],

@@ -273,7 +273,7 @@ class BridgeTestUtil:
             f"zero amount does not match {actual[4]} != {expected['zeroAmount']}"
         )
         assert actual[5] == expected["to"], (
-            f"zero user does not match {actual[5]} != {expected['destinationAccount']}"
+            f"zero user does not match {actual[5]} != {expected['to']}"
         )
         self.assert_is_recent_date(actual[6])
         assert actual[7] == expected["zeroSymbol"], (
@@ -599,7 +599,7 @@ class BridgeTestUtil:
         bridge_e_address: str,
         token_registry_address: str,
         stake_local_account: str,
-        refund_delay_period_mins: int,
+        refund_delay_period_secs: int,
         batch_size: int,
         version: str,
         admin: str,

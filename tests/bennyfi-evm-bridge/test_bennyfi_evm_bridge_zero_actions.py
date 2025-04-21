@@ -66,7 +66,8 @@ def test_all(benybridge):
     assert "contract must be configured first" in repr(e.value)
 
     tevmc.cleos.logger.info("SETCONFIG TESTS")
-    refund_delay_period_mins = 5
+    refund_delay_period_secs = 50
+    renotify_period_secs = 70
     batch_size = 40
     admin = bbf.bridge_z_admin
     tevmc.cleos.logger.info(
@@ -77,7 +78,8 @@ def test_all(benybridge):
             bbf.bridge_e_contract.address,
             bbf.token_registry_contract.address,
             bbf.stake_local_account,
-            refund_delay_period_mins,
+            refund_delay_period_secs,
+            renotify_period_secs,
             batch_size,
             version,
             admin,
@@ -94,7 +96,8 @@ def test_all(benybridge):
             bbf.bridge_e_contract.address,
             bbf.token_registry_contract.address,
             "nonexistant",
-            refund_delay_period_mins,
+            refund_delay_period_secs,
+            renotify_period_secs,
             batch_size,
             version,
             admin,
@@ -107,7 +110,8 @@ def test_all(benybridge):
             bbf.bridge_e_contract.address,
             bbf.token_registry_contract.address,
             bbf.stake_local_account,
-            refund_delay_period_mins,
+            refund_delay_period_secs,
+            renotify_period_secs,
             batch_size,
             version,
             "nonexistent",
@@ -133,7 +137,8 @@ def test_all(benybridge):
             bbf.bridge_e_contract.address,
             bbf.token_registry_contract.address,
             bbf.stake_local_account,
-            refund_delay_period_mins,
+            refund_delay_period_secs,
+            renotify_period_secs,
             0,
             version,
             admin,
@@ -146,7 +151,8 @@ def test_all(benybridge):
             "0x0000000000000000000000000000000000000000",
             bbf.token_registry_contract.address,
             bbf.stake_local_account,
-            refund_delay_period_mins,
+            refund_delay_period_secs,
+            renotify_period_secs,
             batch_size,
             version,
             admin,
@@ -161,7 +167,8 @@ def test_all(benybridge):
             bbf.bridge_e_contract.address,
             "0x0000000000000000000000000000000000000000",
             bbf.stake_local_account,
-            refund_delay_period_mins,
+            refund_delay_period_secs,
+            renotify_period_secs,
             batch_size,
             version,
             admin,
@@ -173,7 +180,8 @@ def test_all(benybridge):
         bbf.bridge_e_contract.address,
         bbf.token_registry_contract.address,
         bbf.stake_local_account,
-        refund_delay_period_mins,
+        refund_delay_period_secs,
+        renotify_period_secs,
         batch_size,
         version,
         admin,
@@ -183,7 +191,8 @@ def test_all(benybridge):
         bbf.bridge_e_contract.address,
         bbf.token_registry_contract.address,
         bbf.stake_local_account,
-        refund_delay_period_mins,
+        refund_delay_period_secs,
+        renotify_period_secs,
         batch_size,
         version,
         admin,
@@ -198,7 +207,8 @@ def test_all(benybridge):
             bbf.bridge_e_contract.address,
             bbf.token_registry_contract.address,
             bbf.stake_local_account,
-            refund_delay_period_mins,
+            refund_delay_period_secs,
+            renotify_period_secs,
             batch_size,
             version,
             admin,
@@ -236,7 +246,8 @@ def test_all(benybridge):
         bbf.bridge_e_contract.address,
         bbf.token_registry_contract.address,
         bbf.stake_local_account,
-        refund_delay_period_mins,
+        refund_delay_period_secs,
+        renotify_period_secs,
         batch_size,
         version,
         admin,
@@ -247,7 +258,8 @@ def test_all(benybridge):
         bbf.bridge_e_contract.address,
         bbf.token_registry_contract.address,
         bbf.stake_local_account,
-        refund_delay_period_mins,
+        refund_delay_period_secs,
+        renotify_period_secs,
         batch_size,
         version,
         admin,
@@ -275,7 +287,8 @@ def test_all(benybridge):
         bbf.bridge_e_contract.address,
         bbf.token_registry_contract.address,
         bbf.stake_local_account,
-        refund_delay_period_mins,
+        refund_delay_period_secs,
+        renotify_period_secs,
         batch_size,
         "v1.1",  # avoid duplicate transaction
         admin,
@@ -692,7 +705,7 @@ def test_all(benybridge):
     tevmc.cleos.logger.info(
         "Set an invalid evm bridge contract address in order to be able to create requests that require refunds"
     )
-    refund_delay_period_mins = 5
+    refund_delay_period_secs = 50
     batch_size = 40
     admin = bbf.bridge_z_admin
     version = "v1.0"
@@ -700,7 +713,8 @@ def test_all(benybridge):
         bbf.token_registry_contract.address,
         bbf.token_registry_contract.address,
         bbf.stake_local_account,
-        refund_delay_period_mins,
+        refund_delay_period_secs,
+        renotify_period_secs,
         batch_size,
         version,
         admin,
@@ -748,7 +762,8 @@ def test_all(benybridge):
         bbf.bridge_e_contract.address,
         bbf.token_registry_contract.address,
         bbf.stake_local_account,
-        refund_delay_period_mins,
+        refund_delay_period_secs,
+        renotify_period_secs,
         batch_size,
         version,
         admin,
@@ -785,7 +800,8 @@ def test_all(benybridge):
         bbf.token_registry_contract.address,
         bbf.token_registry_contract.address,
         bbf.stake_local_account,
-        refund_delay_period_mins,
+        refund_delay_period_secs,
+        renotify_period_secs,
         batch_size,
         version,
         admin,
@@ -898,7 +914,8 @@ def test_all(benybridge):
         bbf.bridge_e_contract.address,
         bbf.token_registry_contract.address,
         bbf.stake_local_account,
-        refund_delay_period_mins,
+        refund_delay_period_secs,
+        renotify_period_secs,
         batch_size,
         version,
         admin,

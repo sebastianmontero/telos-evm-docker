@@ -11,6 +11,10 @@ class UtilZero:
     def parse_timestamp(timestamp) -> datetime:
         return datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")
 
+    @staticmethod
+    def microseconds_to_seconds(microseconds: dict) -> int:
+        return int(microseconds["_count"] / 60_000_000),
+
     def create_delegated_account(
         self,
         owner: str,
