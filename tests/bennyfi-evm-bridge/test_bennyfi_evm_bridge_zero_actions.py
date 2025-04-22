@@ -125,11 +125,26 @@ def test_all(benybridge):
             bbf.token_registry_contract.address,
             bbf.stake_local_account,
             0,
+            renotify_period_secs,
             batch_size,
             version,
             admin,
         )
     assert "refund delay period must be greater than 0" in repr(e.value)
+
+    tevmc.cleos.logger.info("setconfig: Should fail for renotify period equal to 0")
+    with pytest.raises(Exception) as e:
+        zero_bridge.set_config(
+            bbf.bridge_e_contract.address,
+            bbf.token_registry_contract.address,
+            bbf.stake_local_account,
+            refund_delay_period_secs,
+            0,
+            batch_size,
+            version,
+            admin,
+        )
+    assert "renotify period must be greater than 0" in repr(e.value)
 
     tevmc.cleos.logger.info("setconfig: Should fail for batch size equal to 0")
     with pytest.raises(Exception) as e:
@@ -222,7 +237,8 @@ def test_all(benybridge):
         bbf.bridge_e_contract.address,
         bbf.token_registry_contract.address,
         bbf.z_accounts[2],
-        2,
+        30,
+        90,
         20,
         "v2.0",
         z_user,
@@ -234,7 +250,8 @@ def test_all(benybridge):
         bbf.bridge_e_contract.address,
         bbf.token_registry_contract.address,
         bbf.z_accounts[2],
-        2,
+        30,
+        90,
         20,
         "v2.0",
         z_user,
@@ -693,7 +710,7 @@ def test_all(benybridge):
     )
     last_completed_bridge_request = zero_bridge.get_last_bridge_z_to_e_request()
     assert last_completed_bridge_request["state"] == "completed"
-    zero_bridge.lapse_bridge_request(last_completed_bridge_request["bridge_request_id"])
+    zero_bridge.lapse_zero_to_evm_request(last_completed_bridge_request["bridge_request_id"])
 
     tevmc.cleos.logger.info(
         "refund: Should fail for bridge request that has been completed"
@@ -734,7 +751,7 @@ def test_all(benybridge):
         zero_bridge.refund(refund_bridge_request["bridge_request_id"])
     assert "refund delay period has not expired" in repr(e.value)
 
-    zero_bridge.lapse_bridge_request(refund_bridge_request["bridge_request_id"])
+    zero_bridge.lapse_zero_to_evm_request(refund_bridge_request["bridge_request_id"])
 
     tevmc.cleos.logger.info(
         "refund: Should work for bridge request for which refund delay has expired and in pending state"
@@ -791,7 +808,7 @@ def test_all(benybridge):
     )
     last_completed_bridge_request = zero_bridge.get_last_bridge_z_to_e_request()
     assert last_completed_bridge_request["state"] == "completed"
-    zero_bridge.lapse_bridge_request(last_completed_bridge_request["bridge_request_id"])
+    zero_bridge.lapse_zero_to_evm_request(last_completed_bridge_request["bridge_request_id"])
 
     tevmc.cleos.logger.info(
         "Set an invalid evm bridge contract address in order to be able to create requests that require refunds"
@@ -858,7 +875,7 @@ def test_all(benybridge):
     assert token.z_balance(z_user2) == user2_balance
 
     tevmc.cleos.logger.info("execrefunds: Should work refund bridge request 1")
-    zero_bridge.lapse_bridge_request(refund_bridge_request1["bridge_request_id"])
+    zero_bridge.lapse_zero_to_evm_request(refund_bridge_request1["bridge_request_id"])
     zero_bridge.exec_refunds(2)
     user1_balance.amount += Asset.from_str(refund_bridge_request1["quantity"]).amount
 
@@ -883,8 +900,8 @@ def test_all(benybridge):
     assert token.z_balance(z_user2) == user2_balance
 
     tevmc.cleos.logger.info("execrefunds: Should work refund bridge request 2 and 3")
-    zero_bridge.lapse_bridge_request(refund_bridge_request2["bridge_request_id"])
-    zero_bridge.lapse_bridge_request(refund_bridge_request3["bridge_request_id"])
+    zero_bridge.lapse_zero_to_evm_request(refund_bridge_request2["bridge_request_id"])
+    zero_bridge.lapse_zero_to_evm_request(refund_bridge_request3["bridge_request_id"])
     zero_bridge.exec_refunds(3)
     user1_balance.amount += Asset.from_str(refund_bridge_request3["quantity"]).amount
     user2_balance.amount += Asset.from_str(refund_bridge_request2["quantity"]).amount
@@ -950,7 +967,7 @@ def test_all(benybridge):
     assert zero_bridge.get_bridge_z_to_e_request_count() == bridge_request_count
     assert zero_bridge.get_stake_request_count() == stake_request_count
 
-    zero_bridge.reset(1, ["bridgereqs"], 3)
+    zero_bridge.reset(1, ["ztoevmreqs"], 3)
     assert zero_bridge.get_config() is None
 
     bridge_request_count -= 1
@@ -967,7 +984,7 @@ def test_all(benybridge):
     request_count = bridge_request_count + stake_request_count
     call_counter = 5
     while request_count > 0:
-        zero_bridge.reset(2, ["bridgereqs", "stakereqs"], call_counter)
+        zero_bridge.reset(2, ["ztoevmreqs", "stakereqs"], call_counter)
         call_counter += 1
         request_count = max(0, request_count - 2)
         assert (

@@ -25,7 +25,7 @@ class ZeroBridge:
     ) -> dict:
         actor = self.bbf.bridge_z_account if actor is None else actor
         self.logger.info(
-            f"Set config: bridge_e_address: {bridge_e_address}, token_registry_address: {token_registry_address}, stake_local_account: {stake_local_account}, refund_delay_period_secs: {refund_delay_period_secs}, batch_size: {batch_size}, version: {version}, admin: {admin}, active: {active}, actor: {actor}"
+            f"Set config: bridge_e_address: {bridge_e_address}, token_registry_address: {token_registry_address}, stake_local_account: {stake_local_account}, refund_delay_period_secs: {refund_delay_period_secs}, renotify_period_secs: {renotify_period_secs}, batch_size: {batch_size}, version: {version}, admin: {admin}, active: {active}, actor: {actor}"
         )
         if bridge_e_address.startswith('0x'):
             bridge_e_address = bridge_e_address[2:]
@@ -129,9 +129,14 @@ class ZeroBridge:
     def exec_refunds(self, call_counter: int) -> dict:
         return self.__action("execrefunds", self.bbf.bridge_z_account, [call_counter])
 
-    def lapse_bridge_request(self, bridge_request_id: int) -> dict:
+    def lapse_z_to_e_request(self, bridge_request_id: int) -> dict:
         return self.__action(
-            "lpsebrdgereq", self.bbf.bridge_z_account, [bridge_request_id]
+            "lpseztoereq", self.bbf.bridge_z_account, [bridge_request_id]
+        )
+
+    def lapse_processed_e_to_z_request(self, call_id: int) -> dict:
+        return self.__action(
+            "lpspretozrq", self.bbf.bridge_z_account, [call_id]
         )
 
     def reset(
@@ -171,7 +176,7 @@ class ZeroBridge:
 
     def get_last_bridge_z_to_e_request(self) -> dict | None:
         results = self.__table(
-            "bridgereqs",
+            "ztoevmreqs",
             # limit=1,
             reverse=True,
         )
@@ -179,7 +184,7 @@ class ZeroBridge:
 
     def get_bridge_z_to_e_request(self, bridge_request_id: int) -> dict | None:
         results = self.__table(
-            "bridgereqs",
+            "ztoevmreqs",
             key_type="i64",
             index="1",
             lower_bound=bridge_request_id,
@@ -206,7 +211,7 @@ class ZeroBridge:
         return results[0] if len(results) > 0 else None
 
     def get_bridge_z_to_e_request_count(self) -> dict | None:
-        results = self.__table("bridgereqs")
+        results = self.__table("ztoevmreqs")
         return len(results)
 
     def get_stake_request_count(self) -> dict | None:

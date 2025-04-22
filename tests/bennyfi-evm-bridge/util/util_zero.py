@@ -13,7 +13,7 @@ class UtilZero:
 
     @staticmethod
     def microseconds_to_seconds(microseconds: dict) -> int:
-        return int(microseconds["_count"] / 60_000_000),
+       return int(microseconds["_count"] / 1_000_000)
 
     def create_delegated_account(
         self,

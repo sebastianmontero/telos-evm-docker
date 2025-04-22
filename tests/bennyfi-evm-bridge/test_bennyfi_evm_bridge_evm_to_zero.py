@@ -168,7 +168,11 @@ def test_all(benybridge):
     tevmc.cleos.logger.info(
         "Calling process requests when all requests have been processed, should be a no-op"
     )
-    test_util.assert_process_bridge_evm_to_zero_reqs(requests, check_already_processed=True)
+
+    with pytest.raises(Exception) as e:
+        test_util.assert_process_bridge_evm_to_zero_reqs(requests, check_already_processed=True)
+    assert "prevmtozreqs[nothing-to-process]" in repr(e.value)
+    
 
     tevmc.cleos.logger.info(
         "Creating a couple of valid requests, when there are already processed requests, should process the new ones only"
@@ -202,14 +206,32 @@ def test_all(benybridge):
     tevmc.cleos.logger.info(
         "Calling remove processed requests when they haven't been notified should be a no-op"
     )
-    test_util.assert_remove_processed_bridge_evm_to_zero_reqs(requests, check_notified=True)
+
+    with pytest.raises(Exception) as e:
+        test_util.assert_remove_processed_bridge_evm_to_zero_reqs(requests, check_notified=True)
+    assert "rmpretozreqs[nothing-to-process]" in repr(e.value)
     
     test_util.assert_notify_processed_bridge_evm_to_zero_reqs(requests)
 
     tevmc.cleos.logger.info(
-        "Calling notify processed requests when they have already been notified should be a no-op"
+        "Calling notify processed requests when they have been notified and still within the renotify period should not process them again"
     )
+    # reqs = bbf.zero_bridge.get_processed_bridge_e_to_z_requests()
+    # config = bbf.zero_bridge.get_config()
+    # tevmc.cleos.logger.info(f"Current config: {json.dumps(config, indent=4)}")
+    # tevmc.cleos.logger.info(f"Requests: {json.dumps(reqs, indent=4)}")
+
+    with pytest.raises(Exception) as e:
+        test_util.assert_notify_processed_bridge_evm_to_zero_reqs(requests, check_notified=True)
+    assert "ntpretozreqs[nothing-to-process]" in repr(e.value)
+
+    tevmc.cleos.logger.info(
+        "Calling notify processed requests when the renotify period has passed for some of the requests should process them again"
+    )
+
+    bbf.zero_bridge.lapse_processed_e_to_z_request(requests[0]["request"]["id"])
     test_util.assert_notify_processed_bridge_evm_to_zero_reqs(requests, check_notified=True)
+    
     test_util.assert_remove_processed_bridge_evm_to_zero_reqs(requests)
 
     requests = []
@@ -248,7 +270,9 @@ def test_all(benybridge):
         "Calling process requests again with the same batch size should be a no-op"
     )
 
-    test_util.assert_process_bridge_evm_to_zero_reqs(requests[:1], check_already_processed=True)
+    with pytest.raises(Exception) as e:
+        test_util.assert_process_bridge_evm_to_zero_reqs(requests[:1], check_already_processed=True)
+    assert "prevmtozreqs[nothing-to-process]" in repr(e.value)
 
     assert bbf.zero_bridge.get_processed_bridge_e_to_z_request_count() == 1, f"Expected 1 processed request, got {bbf.zero_bridge.get_processed_bridge_e_to_z_request_count()}"
 
@@ -278,7 +302,10 @@ def test_all(benybridge):
         "Calling notify processed requests again with a batch size of 1 should be a no-op"
     )
 
-    test_util.assert_notify_processed_bridge_evm_to_zero_reqs(requests[:1], check_notified=True)
+    with pytest.raises(Exception) as e:
+        test_util.assert_notify_processed_bridge_evm_to_zero_reqs(requests[:1], check_notified=True)
+    assert "ntpretozreqs[nothing-to-process]" in repr(e.value)
+    
 
     test_util.assert_bridge_e_to_zero_req_exists(requests[1]["request"]["id"], exists=True)
 

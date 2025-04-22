@@ -25,6 +25,7 @@ from util.evm_transaction_signer import EVMTransactionSigner
 from util.token import Token
 from util.token_test_util import TokenTestUtil
 from util.balances import Balances
+from util.util_zero import UtilZero
 from enum import Enum
 
 
@@ -600,6 +601,7 @@ class BridgeTestUtil:
         token_registry_address: str,
         stake_local_account: str,
         refund_delay_period_secs: int,
+        renotify_period_secs: int,
         batch_size: int,
         version: str,
         admin: str,
@@ -611,13 +613,16 @@ class BridgeTestUtil:
             f"bridge_e_address: {bridge_e_address}, token_registry_address: {token_registry_address}, stake_local_account: {stake_local_account}, version: {version}, admin: {admin}"
         )
         assert actual is not None
-        assert actual["evm_bridge_address"] == bridge_e_address[2:].lower()
-        assert (
-            actual["evm_token_registry_address"] == token_registry_address[2:].lower()
-        )
-        assert actual["stake_local_contract"] == stake_local_account
-        assert actual["version"] == version
-        assert actual["admin"] == admin
+        assert actual["evm_bridge_address"] == bridge_e_address[2:].lower(), f"evm bridge address does not match {actual['evm_bridge_address']} != {bridge_e_address[2:].lower()}"
+        assert actual["evm_token_registry_address"] == token_registry_address[2:].lower(), f"evm token registry address does not match {actual['evm_token_registry_address']} != {token_registry_address[2:].lower()}"
+        
+        assert UtilZero.microseconds_to_seconds(actual["refund_delay_period"]) == refund_delay_period_secs, f"refund delay period does not match {UtilZero.microseconds_to_seconds(actual['refund_delay_period'])} != {refund_delay_period_secs}"
+        assert UtilZero.microseconds_to_seconds(actual["renotify_period"]) == renotify_period_secs, f"refund delay period does not match {UtilZero.microseconds_to_seconds(actual['renotify_period'])} != {renotify_period_secs}"
+        assert actual["stake_local_contract"] == stake_local_account, f"stake local contract does not match {actual['stake_local_contract']} != {stake_local_account}"
+        assert actual["batch_size"] == batch_size, f"batch size does not match {actual['batch_size']} != {batch_size}"
+        assert actual["version"] == version, f"version does not match {actual['version']} != {version}"
+        assert actual["admin"] == admin, f"admin does not match {actual['admin']} != {admin}"
+        assert actual["active"] == active, f"active does not match {actual['active']} != {active}"
 
     def assert_is_recent_date(self, timestamp: str | int):
         if isinstance(timestamp, str):
